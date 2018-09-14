@@ -50,6 +50,7 @@
 /*!< Include section --------------------------------------------------------------------------- */
 
 #include "Dma_Cfg.h"
+#include "Dma_irq.h"
 
 /*!< Type definitions section ------------------------------------------------------------------ */
 
@@ -73,12 +74,12 @@
  *!<                           - Initialize DMAMUX peripheral to a default state.
  *!<                           - Initialize DMA peripheral to a default state.
  *!< Parameters              :
- *!<                   Input : DMA_ConfigType cfg
+ *!<                   Input : const DMA_ConfigType cfg
  *!<                   Output: None
  *!< Return                  : void
  *!< Critical section YES/NO : NO
  */
-void DMA_Init(DMA_ConfigType* cfg);
+void DMA_Init(const DMA_ConfigType* cfg);
 
 /****************************************************************************************
  *!< Function    	     : DMA_Config
@@ -95,13 +96,13 @@ void DMA_Init(DMA_ConfigType* cfg);
  *!<      - Reset to default the DMA channel.
  *!<      - disable the DMAMUX link for the DMA channel.
  *!< Parameters              :
- *!<                   Input : DMA_Channel_ConfigType *cfg - Pointer to array of channels configuration structures
+ *!<                   Input : const DMA_Channel_ConfigType *cfg - Pointer to array of channels configuration structures
  *!<                   		 : uint8_t channelsCount - number of used channels
  *!<                   Output: None
  *!< Return                  : void
  *!< Critical section YES/NO : NO
  */
-void DMA_Config(DMA_Channel_ConfigType *cfg, uint8_t channelsCount);
+void DMA_Config(const DMA_Channel_ConfigType *cfg, uint8_t channelsCount);
 
 
 /****************************************************************************************
@@ -187,6 +188,18 @@ uint32_t DMA_GetCurrentBlockIteration(DMA_ChannelHdl_t Handle);
  */
 void DMA_Shutdown(void);
 
+
+
+/****************************************************************************************
+ *!< Function    	     : DMA_GetState
+ *!< @brief		     : Get DMA driver state
+ *!< Parameters              :
+ *!<                   Input : void
+ *!<                   Output:
+ *!< Return                  : DMA_State_t
+ *!< Critical section YES/NO : NO
+ */
+DMA_State_t DMA_GetState(void);
 
 
 /*!< C++ banding section finish ---------------------------------------------------------------- */

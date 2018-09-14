@@ -255,31 +255,46 @@ typedef struct DMA_UserCfg_type{
 
 
 /*!<
+ *!< @brief On half interrupt callback type
+ *!< */
+typedef void (*onHalf_t)();
+
+/*!<
+ *!< @brief On finish interrupt callback type
+ *!< */
+typedef void (*onFinish_t)();
+
+/*!<
+ *!< @brief On error interrupt callback type
+ *!< */
+typedef void (*onError_t)();
+
+/*!<
  *!< @brief User DMA channel configuration
  *!< */
 typedef struct DMA_Channel_UserCfg_type{
 
-	uint32_t            srcAddr;   /* SADDR */
+	uint32_t            srcAddr;
 
-	uint32_t            dstAddr;   /* DADDR */
+	uint32_t            dstAddr;
 
 	uint32_t            srcAddrAdjustment;
 
 	uint32_t            dstAddrOnFinish;
 
-	uint32_t            bytesPerRequest;  /* NBYTES */
+	uint32_t            bytesPerRequest;
 
-	bool                bUseLinkToChannelAfterRequest; /* E_LINK */
+	bool                bUseLinkToChannelAfterRequest;
 
-	bool                bUseLinkToChannelAfterFinish; /* MAJORELINK */
+	bool                bUseLinkToChannelAfterFinish;
 
-	bool                bEnableOnHalfInterrupt;	/* INT_HALF */
+	onHalf_t            onHalfCallback;
 
-	bool                bEnableOnFinishInterrupt; /* INT_MAJ */
+	onFinish_t          onFinishCallback;
 
-	bool                bEnableOnErrorInterrupt;
+	onError_t           onErrorCallback;
 
-	bool                bUseAddrMask; /*  */
+	bool                bUseAddrMask;
 
 	bool                bUseOtherSrcAddrOnFinish;
 
@@ -287,19 +302,19 @@ typedef struct DMA_Channel_UserCfg_type{
 
 	bool                bSingleBlockTransfer;
 
-	int16_t             srcTransferOffset; /* SOFF */
+	int16_t             srcTransferOffset;
 
-	int16_t             dstTransferOffset;  /* DOFF */
+	int16_t             dstTransferOffset;
 
 	int16_t             totalSize;
 
-	DMA_TransferSize_t  transferSize;  /* SSIZE, DSIZE */
+	DMA_TransferSize_t  transferSize;
 
-	DMA_TransferType_t  transferType;  /* Define the type of transfer (SMLOE, DMLOE)*/
+	DMA_TransferType_t  transferType;
 
-	uint8_t             offsetPerRequest;  /* MLOFF */
+	uint8_t             offsetPerRequest;
 
-	uint8_t             priority; /* DCHPRI register */
+	uint8_t             priority;
 
 	uint8_t             srcAddrMask;
 

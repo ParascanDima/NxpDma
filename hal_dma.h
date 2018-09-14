@@ -164,6 +164,19 @@ uint8_t HAL_DMA_GetChannelState(uint8_t channel);
 uint8_t HAL_DMA_ReportErrors(void);
 
 
+
+/****************************************************************************************
+ *!< Function    	     	 : HAL_DMA_ReportErrors
+ *!< @brief		    		 : Indicates if some DMA errors appear.
+ *!< Parameters              :
+ *!<                   Input : uint8_t channelNumber
+ *!<                   Output:
+ *!< Return                  : uint16_t
+ *!< Critical section YES/NO : no
+ */
+uint16_t HAL_DMA_GetTotalSize(uint8_t channelNumber);
+
+
 /****************************************************************************************
  *!< Function    	     	 : HAL_DMA_GetArbitrationAlgorith
  *!< @brief		    		 : comment
@@ -633,6 +646,18 @@ void HAL_DMA_SetDstRequestOffset(uint8_t channelNumber, DMA_Decision_t decision)
 
 
 /****************************************************************************************
+ *!< Function    	     	 : HAL_DMA_EnableOffsetsPerRequest
+ *!< @brief		    		 : comment
+ *!< Parameters              :
+ *!<                   Input : DMA_Decision_t isEnable
+ *!<                   Output:
+ *!< Return                  : void
+ *!< Critical section YES/NO : NO
+ */
+void HAL_DMA_EnableOffsetsPerRequest(DMA_Decision_t decision);
+
+
+/****************************************************************************************
  *!< Function    	     	 : HAL_DMA_SetRequestBlockSize
  *!< @brief		    		 : comment
  *!< Parameters              :
@@ -785,6 +810,19 @@ void HAL_DMA_TriggerSwRequest(uint8_t channelNumber);
  *!< Critical section YES/NO : NO
  */
 void HAL_DMA_InitChannelMUX(uint8_t channelNumber, DMA_RequestSource_t source, DMA_ChannelOperation_t mode);
+
+
+
+/****************************************************************************************
+ *!< Function    	     	 : HAL_DMA_ClearTransferControlDescriptor
+ *!< @brief		    		 : comment
+ *!< Parameters              :
+ *!<                   Input : uint8_t channelNumber
+ *!<                   Output:
+ *!< Return                  : void
+ *!< Critical section YES/NO : NO
+ */
+void HAL_DMA_ClearTransferControlDescriptor(uint8_t channelNumber);
 
 
 

@@ -657,6 +657,22 @@ uint8_t HAL_DMA_ReportErrors(void)
 
 
 /****************************************************************************************
+ *!< Function    	     	 : HAL_DMA_ReportErrors
+ *!< @brief		    		 : Indicates if some DMA errors appear.
+ *!< Parameters              :
+ *!<                   Input : uint8_t channelNumber
+ *!<                   Output:
+ *!< Return                  : uint16_t
+ *!< Critical section YES/NO : no
+ */
+uint16_t HAL_DMA_GetTotalSize(uint8_t channelNumber)
+{
+	return hdma.TCD[channelNumber]->BITER.ELINKNO.BITER;
+}
+
+
+
+/****************************************************************************************
  *!< Function    	     	 : HAL_DMA_GetArbitrationAlgorith
  *!< @brief		    		 : comment
  *!< Parameters              :
@@ -1318,6 +1334,21 @@ void HAL_DMA_SetDstRequestOffset(uint8_t channelNumber, DMA_Decision_t decision)
 
 
 /****************************************************************************************
+ *!< Function    	     	 : HAL_DMA_EnableOffsetsPerRequest
+ *!< @brief		    		 : comment
+ *!< Parameters              :
+ *!<                   Input : DMA_Decision_t isEnable
+ *!<                   Output:
+ *!< Return                  : void
+ *!< Critical section YES/NO : NO
+ */
+void HAL_DMA_EnableOffsetsPerRequest(DMA_Decision_t decision)
+{
+	hdma.CR->EMLM = decision;
+}
+
+
+/****************************************************************************************
  *!< Function    	     	 : HAL_DMA_SetRequestBlockSize
  *!< @brief		    		 : comment
  *!< Parameters              :
@@ -1336,14 +1367,14 @@ void HAL_DMA_SetRequestBlockSize(uint8_t channelNumber, uint32_t size)
 	}
 	else
 	{
-		if ((tcd->NBYTES.MLOFFNO.DMLOE ^ tcd->NBYTES.MLOFFNO.SMLOE) ||
+		if (//(tcd->NBYTES.MLOFFNO.DMLOE ^ tcd->NBYTES.MLOFFNO.SMLOE) ||
 				(tcd->NBYTES.MLOFFNO.DMLOE || tcd->NBYTES.MLOFFNO.SMLOE) )
 		{
-			tcd->NBYTES.MLOFFNO.NBYTES = size;
+			tcd->NBYTES.MLOFFYES.NBYTES = size;
 		}
 		else
 		{
-			tcd->NBYTES.MLOFFYES.NBYTES = (uint16_t)size;
+			tcd->NBYTES.MLOFFNO.NBYTES = (uint16_t)size;
 		}
 	}
 
@@ -1562,12 +1593,34 @@ void HAL_DMA_InitChannelMUX(uint8_t channelNumber, DMA_RequestSource_t source, D
 
 	if(validConfig)
 	{
-		hdma.CHCFG[channelNumber]->ENBL = enEnable;
 		hdma.CHCFG[channelNumber]->SOURCE = (uint8_t)source;
+		hdma.CHCFG[channelNumber]->ENBL = enEnable;
 	}
 
 }
 
+
+
+/****************************************************************************************
+ *!< Function    	     	 : HAL_DMA_ClearTransferControlDescriptor
+ *!< @brief		    		 : comment
+ *!< Parameters              :
+ *!<                   Input : uint8_t channelNumber
+ *!<                   Output:
+ *!< Return                  : void
+ *!< Critical section YES/NO : NO
+ */
+void HAL_DMA_ClearTransferControlDescriptor(uint8_t channelNumber)
+{
+  uint8_t tcd_memory = sizeof(*hdma.TCD[channelNumber])/4;
+  uint32_t * memory = (uint32_t *)hdma.TCD[channelNumber];
+  uint8_t mem_index;
+  for (mem_index = 0; mem_index < tcd_memory; mem_index++)
+    {
+      *(memory+mem_index) = 0;
+    }
+
+}
 
 
 /************************************** END OF FILE **********************************************/

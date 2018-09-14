@@ -58,7 +58,7 @@
 
 /*!< Definitions section ----------------------------------------------------------------------- */
 
-#define DMA_USED_CHANNELS 1
+#define DMA_USED_CHANNELS 0
 
 
 /*!< Exported variables section ---------------------------------------------------------------- */
@@ -66,11 +66,46 @@
 extern DMA_ConfigType DMA_ConfigData;
 extern DMA_Channel_ConfigType DMA_ChannelsConfig[DMA_USED_CHANNELS];
 
-extern uint8_t volatile TCD0_Dest;
 
 /*!< Functions prototypes sections ------------------------------------------------------------- */
 
 
+/****************************************************************************************
+ *!< Function    	     : DMA_IsConfigMapped
+ *!< @brief		     : Check if configurations were mapped
+ *!< Parameters              :
+ *!<                   Input : void
+ *!<                   Output:
+ *!< Return                  : uint8_t
+ *!< Critical section YES/NO : NO
+ */
+uint8_t DMA_IsConfigMapped(void);
+
+
+
+/****************************************************************************************
+ *!< Function    	     : DMA_ConfigMap
+ *!< @brief		     : Is used to map the configurations
+ *!< Parameters              :
+ *!<                   Input : void
+ *!<                   Output:
+ *!< Return                  : void
+ *!< Critical section YES/NO : NO
+ */
+void DMA_ConfigMap(void);
+
+
+
+/****************************************************************************************
+ *!< Function    	     : DMA_GetChannelConfigIndex
+ *!< @brief		     : Get the index of channel in configuration array
+ *!< Parameters              :
+ *!<                   Input : uint8_t channel
+ *!<                   Output:
+ *!< Return                  : uint8_t
+ *!< Critical section YES/NO : NO
+ */
+uint8_t DMA_GetChannelConfigIndex(uint8_t channel);
 
 
 /*!< C++ banding section finish ---------------------------------------------------------------- */

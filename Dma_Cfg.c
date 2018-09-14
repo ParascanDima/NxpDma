@@ -49,34 +49,21 @@
 /*!< Exported variables section ---------------------------------------------------------------- */
 
 DMA_ConfigType DMA_ConfigData = {
-		.arbitrationAlgorithm = enDMA_ARBITRATION_ROUND_ROBIN,
+		.arbitrationAlgorithm = enDMA_ARBITRATION_FIXED_PRIORITY,
 		.bEnableDebug = FALSE,
-		.bEnableHaltOnError = TRUE
+		.bEnableHaltOnError = FALSE
 };
 
-static uint8_t TCD0_Source[] = {"Hello World"};
+static int8_t DmaCfgMap[16] =
+    {
+	-1, -1, -1, -1,
+	-1, -1, -1, -1,
+	-1, -1, -1, -1,
+	-1, -1, -1, -1
+    };
 
 DMA_Channel_ConfigType DMA_ChannelsConfig[DMA_USED_CHANNELS] = {
-		{
-			.channelNumber = 0,
-			.srcAddr = (uint32_t)TCD0_Source,
-			.dstAddr = (uint32_t)&TCD0_Dest,
-			.bUseLinkToChannelAfterRequest = FALSE,
-			.bUseLinkToChannelAfterFinish = FALSE,
-			.bEnableOnHalfInterrupt = FALSE,
-			.bEnableOnFinishInterrupt = FALSE,
-			.bEnableOnErrorInterrupt = FALSE,
-			.bUseAddrMask = FALSE,
-			.bUseOtherSrcAddrOnFinish = FALSE,
-			.bUseOtherDstAddrOnFinish = FALSE,
-			.srcTransferOffset = 1,
-			.dstTransferOffset = 0,
-			.transferSize = 0,
-			.bytesPerRequest = 1,
-			.transferType = enDMA_TRANSFER_MEM2MEM,
-			.offsetPerRequest = 0,
-			.totalSize = 11,
-		}
+
 };
 
 /*!< Static variable section ------------------------------------------------------------------- */
@@ -91,6 +78,69 @@ DMA_Channel_ConfigType DMA_ChannelsConfig[DMA_USED_CHANNELS] = {
 /*!< Function definitions ---------------------------------------------------------------------- */
 
 
+/****************************************************************************************
+ *!< Function    	     : DMA_IsConfigMapped
+ *!< @brief		     : Check if configurations were mapped
+ *!< Parameters              :
+ *!<                   Input : void
+ *!<                   Output:
+ *!< Return                  : uint8_t
+ *!< Critical section YES/NO : NO
+ */
+uint8_t DMA_IsConfigMapped(void)
+{
+  uint8_t index;
+  uint8_t result = 0;
+
+  for (index = 0; index < 16; index++)
+    {
+      if (DmaCfgMap[index] >= 0)
+	{
+	  result = 1;
+	  break;
+	}
+    }
+
+  return result;
+}
+
+
+
+/****************************************************************************************
+ *!< Function    	     : DMA_ConfigMapping
+ *!< @brief		     : Is used to map the configurations
+ *!< Parameters              :
+ *!<                   Input : void
+ *!<                   Output:
+ *!< Return                  : void
+ *!< Critical section YES/NO : NO
+ */
+void DMA_ConfigMap(void)
+{
+  uint8_t index;
+
+  for (index = 0; index < DMA_USED_CHANNELS; index++)
+    {
+      DmaCfgMap[DMA_ChannelsConfig[index].channelNumber] = index;
+    }
+
+}
+
+
+
+/****************************************************************************************
+ *!< Function    	     : DMA_GetChannelConfigIndex
+ *!< @brief		     : Get the index of channel in configuration array
+ *!< Parameters              :
+ *!<                   Input : uint8_t channel
+ *!<                   Output:
+ *!< Return                  : uint8_t
+ *!< Critical section YES/NO : NO
+ */
+uint8_t DMA_GetChannelConfigIndex(uint8_t channel)
+{
+  return DmaCfgMap[channel];
+}
 
 
 /************************************** END OF FILE **********************************************/
