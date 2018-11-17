@@ -1,24 +1,11 @@
-/************************** (C) 2018 BSS-ONE ******************************************************
- *  @verbatim
- *   Copyright (C) 2018 BSS-ONE
- *   All Rights Reserved.
- *
- *   The reproduction, transmission or use of this document or its contents is not permitted
- *   without express written authority.
- *   Offenders will be liable for damages. All rights, including rights created
- *   by patent grant or registration of a utility model or design, are reserved.
- * @endverbatim
- **************************************************************************************************
- */
-
 /********************************************* Login **********************************************
- *!< File Name 						: hal_dmaif.h
+ *!< File Name 						    : hal_dmaif.h
  *!< Author   	        			: Dumitru Parascan
- *!< Version	        			: V1.0
+ *!< Version	        			  : V1.0
  *!< Date     		        		: Aug 30, 2018
- *!< @brief		        			:
- *!<                            	: (see note at the end of the file)
- *!< Modifiable YES/NO		        :
+ *!< @brief		        			  :
+ *!<                          : (see note at the end of the file)
+ *!< Modifiable YES/NO		    :
  *!< Critical explanation			:
  **************************************************************************************************
  */
@@ -48,8 +35,10 @@
 
 
 /*!< Include section --------------------------------------------------------------------------- */
-
+#include "Modules.h"
 #include <Std_Types.h>
+
+#ifdef USE_DMA
 
 /*!< Type definitions section ------------------------------------------------------------------ */
 
@@ -94,11 +83,11 @@ typedef enum {
  *!< */
 typedef enum DMA_TransferSize_e
 {
-  enDMA_TRANSFER_SIZE_1B = 0x0U,                    /* read/write accesses are done 8 bit at a time */
-  enDMA_TRANSFER_SIZE_2B = 0x1U,                    /* read/write accesses are done 16 bit at a time */
-  enDMA_TRANSFER_SIZE_4B = 0x2U,                    /* read/write accesses are done 32 bit at a time */
-  enDMA_TRANSFER_SIZE_16B = 0x4U,                   /* read/write accesses are done in bursts of 16 bytes at a time */
-  enDMA_TRANSFER_SIZE_32B = 0x5U,                   /* read/write accesses are done in bursts of 32 bytes at a time */
+  enDMA_TRANSFER_SIZE_1B = 0x1U,                    /* read/write accesses are done 8 bit at a time */
+  enDMA_TRANSFER_SIZE_2B = 0x2U,                    /* read/write accesses are done 16 bit at a time */
+  enDMA_TRANSFER_SIZE_4B = 0x4U,                    /* read/write accesses are done 32 bit at a time */
+  enDMA_TRANSFER_SIZE_16B = 0x16U,                   /* read/write accesses are done in bursts of 16 bytes at a time */
+  enDMA_TRANSFER_SIZE_32B = 0x32U,                   /* read/write accesses are done in bursts of 32 bytes at a time */
 
 } DMA_TransferSize_t;
 
@@ -248,8 +237,8 @@ typedef enum {
 typedef struct DMA_UserCfg_type{
 
 	DMA_Arbitration_Algorithm_t arbitrationAlgorithm;/*  */
-	bool bEnableHaltOnError;
-	bool bEnableDebug;
+	BOOL bEnableHaltOnError;
+	BOOL bEnableDebug;
 
 } DMA_ConfigType;
 
@@ -257,17 +246,17 @@ typedef struct DMA_UserCfg_type{
 /*!<
  *!< @brief On half interrupt callback type
  *!< */
-typedef void (*onHalf_t)();
+typedef void (*onHalf_t)(void *);
 
 /*!<
  *!< @brief On finish interrupt callback type
  *!< */
-typedef void (*onFinish_t)();
+typedef void (*onFinish_t)(void *);
 
 /*!<
  *!< @brief On error interrupt callback type
  *!< */
-typedef void (*onError_t)();
+typedef void (*onError_t)(void *);
 
 /*!<
  *!< @brief User DMA channel configuration
@@ -284,23 +273,29 @@ typedef struct DMA_Channel_UserCfg_type{
 
 	uint32_t            bytesPerRequest;
 
-	bool                bUseLinkToChannelAfterRequest;
+	BOOL                bUseLinkToChannelAfterRequest;
 
-	bool                bUseLinkToChannelAfterFinish;
+	BOOL                bUseLinkToChannelAfterFinish;
 
 	onHalf_t            onHalfCallback;
 
+	void*               onHalfCallbackParameter;
+
 	onFinish_t          onFinishCallback;
+
+	void*               onFinishCallbackParameter;
 
 	onError_t           onErrorCallback;
 
-	bool                bUseAddrMask;
+	void*               onErrorCallbackParameter;
 
-	bool                bUseOtherSrcAddrOnFinish;
+	BOOL                bUseAddrMask;
 
-	bool                bUseOtherDstAddrOnFinish;
+	BOOL                bUseOtherSrcAddrOnFinish;
 
-	bool                bSingleBlockTransfer;
+	BOOL                bUseOtherDstAddrOnFinish;
+
+	BOOL                bStopOnFinish;
 
 	int16_t             srcTransferOffset;
 
@@ -331,9 +326,22 @@ typedef struct DMA_Channel_UserCfg_type{
 } DMA_Channel_ConfigType;
 
 
+/*!<
+ *!< @brief DMA event type
+ *!< */
+typedef enum {
+
+  enDMA_On_Finish = 0,                             /*  */
+  enDMA_On_Half,
+  enDMA_On_Error,
+
+} DMA_EVENT_t;
+
+
+
 /*!< Definitions section ----------------------------------------------------------------------- */
 
-
+#define DMA_TOTAL_CHANNELS 16
 
 
 /*!< Exported variables section ---------------------------------------------------------------- */
@@ -349,7 +357,7 @@ typedef struct DMA_Channel_UserCfg_type{
 	}
 #endif /* __cplusplus */
 
-
+#endif /* USE_DMA */
 #endif /* HAL_DMAIF_H_ */
 
 

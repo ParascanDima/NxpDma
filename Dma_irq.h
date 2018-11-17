@@ -1,24 +1,11 @@
-/************************** (C) 2018 BSS-ONE ******************************************************
- *  @verbatim
- *   Copyright (C) 2018 BSS-ONE
- *   All Rights Reserved.
- *
- *   The reproduction, transmission or use of this document or its contents is not permitted
- *   without express written authority.
- *   Offenders will be liable for damages. All rights, including rights created
- *   by patent grant or registration of a utility model or design, are reserved.
- * @endverbatim
- **************************************************************************************************
- */
-
 /********************************************* Login **********************************************
- *!< File Name 				: Dma_irq.h
+ *!< File Name 					: Dma_irq.h
  *!< Author   	        		: Dumitru Parascan
  *!< Version	        		: V1.0
  *!< Date     		        	: Sep 13, 2018
- *!< @brief		        	: 
- *!<                            	: (see note at the end of the file)
- *!< Modifiable YES/NO		        : 
+ *!< @brief		        		: 
+ *!<                            : (see note at the end of the file)
+ *!< Modifiable YES/NO		    : 
  *!< Critical explanation		: 
  **************************************************************************************************
  */
@@ -40,7 +27,8 @@
 #ifndef DMA_IRQ_H_
 #define DMA_IRQ_H_
 
-
+#include "Modules.h"
+#ifdef USE_DMA
 /*!< C++ banding section start ----------------------------------------------------------------- */
 #ifdef __cplusplus
     extern "C" {
@@ -292,7 +280,7 @@ extern void DMA_Error_IRQHandler(void);
 	}
 #endif /* __cplusplus */
 
-
+#endif /* USE_DMA */
 #endif /* DMA_IRQ_H_ */
 
 

@@ -1,16 +1,3 @@
-/************************** (C) 2018 BSS-ONE ******************************************************
- *  @verbatim
- *   Copyright (C) 2018 BSS-ONE
- *   All Rights Reserved.
- *
- *   The reproduction, transmission or use of this document or its contents is not permitted
- *   without express written authority.
- *   Offenders will be liable for damages. All rights, including rights created
- *   by patent grant or registration of a utility model or design, are reserved.
- * @endverbatim
- **************************************************************************************************
- */
-
 /********************************************* Login **********************************************
  *!< File Name 					: dma.c
  *!< Author   	        		: Dumitru Parascan
@@ -40,6 +27,7 @@
 
 #include "dma.h"
 #include "hal_dma.h"
+#ifdef USE_DMA
 
 /*<! Definitions section ----------------------------------------------------------------------- */
 
@@ -104,19 +92,20 @@ void DMA_Init(const DMA_ConfigType* cfg)
 void DMA_Config(const DMA_Channel_ConfigType *cfg, uint8_t channelsCount)
 {
   uint8_t index;
-  uint8_t accessToMLOFF = FALSE;
-  uint16_t minorLoopCount = 1;
+  uint32_t transferControl;
 
-  if ( !DMA_IsConfigMapped() )
-    {
-      DMA_ConfigMap();
-    }
-
+  INT_SYS_EnableIRQ(DMA0_IRQn);
   for (index = 0; index < channelsCount; index++)
     {
       HAL_DMA_InitChannelMUX(cfg[index].channelNumber, cfg[index].requestSource, enNormalMode);
 
-      HAL_DMA_ClearTransferControlDescriptor(cfg[index].channelNumber);
+      transferControl = HAL_DMA_GetTransferControl(cfg[index].channelNumber);
+
+      if (cfg->transferType != enDMA_TRANSFER_PERIPH2PERIPH)
+	{
+	  HAL_DMA_EnableOffsetsPerRequest(enEnable);
+	}
+
       /*!<
        *!< @brief Set channel priority if Fixed Priority arbitration is used.
        *!< */
@@ -125,190 +114,9 @@ void DMA_Config(const DMA_Channel_ConfigType *cfg, uint8_t channelsCount)
 	  HAL_DMA_SetChannelPriority(cfg[index].channelNumber, cfg[index].priority);
 	}
 
-      /*!<
-       *!< @brief Configure the initial source and destination addresses.
-       *!< */
-      HAL_DMA_SetSrcAddr(cfg[index].channelNumber, cfg[index].srcAddr);
-      HAL_DMA_SetDstAddr(cfg[index].channelNumber, cfg[index].dstAddr);
-
-      /*!<
-       *!< @brief Configure the source read/destination write size
-       *!< */
-      HAL_DMA_SetSrcTransferSize(cfg[index].channelNumber, cfg[index].transferSize);
-      HAL_DMA_SetDstTransferSize(cfg[index].channelNumber, cfg[index].transferSize);
-
-      /*!<
-       *!< @brief Configure the offset after each source read/destination write operation.
-       *!< */
-      HAL_DMA_SetSrcTransferOffset(cfg[index].channelNumber, cfg[index].srcTransferOffset);
-      HAL_DMA_SetDstTransferOffset(cfg[index].channelNumber, cfg[index].dstTransferOffset);
-
-      /*!<
-       *!< @brief Configure the cyclic buffer transmission of 2^n bytes (n - value of mask).
-       *!< */
-      if (cfg[index].bUseAddrMask)
-	{
-	  HAL_DMA_SetSrcAddrMask(cfg[index].channelNumber, cfg[index].srcAddrMask);
-	  HAL_DMA_SetDstAddrMask(cfg[index].channelNumber, cfg[index].dstAddrMask);
+	if (DMA_ConfigTransferControl(transferControl, (DMA_Channel_ConfigType *)&cfg[index]) == E_OK) {
+	  DMA_AddConfiguredChannel(cfg[index]);
 	}
-      else
-	{
-	  /*!<
-	   *!< @brief Disable modulo feature.
-	   *!< */
-	  HAL_DMA_SetSrcAddrMask(cfg[index].channelNumber, 0x00);
-	  HAL_DMA_SetDstAddrMask(cfg[index].channelNumber, 0x00);
-	}
-
-      /*!<
-       *!< @brief Configure the source and destination offset after request.
-       *!< */
-      if (cfg[index].transferType != enDMA_TRANSFER_PERIPH2PERIPH)
-	{
-	  HAL_DMA_EnableOffsetsPerRequest(enEnable);
-	  switch (cfg[index].transferType) {
-	    case enDMA_TRANSFER_PERIPH2MEM:
-	      /*!<
-	       *!< @brief Only destination offset is enabled.
-	       *!< */
-	      if(cfg[index].offsetPerRequest != 0)
-		{
-		  HAL_DMA_SetDstRequestOffset(cfg[index].channelNumber, enEnable);
-		  accessToMLOFF = TRUE;
-		}
-	      break;
-	    case enDMA_TRANSFER_MEM2PERIPH:
-	      /*!<
-	       *!< @brief Only source offset is enabled.
-	       *!< */
-	      if(cfg[index].offsetPerRequest != 0)
-		{
-		  HAL_DMA_SetSrcRequestOffset(cfg[index].channelNumber, enEnable);
-		  accessToMLOFF = TRUE;
-		}
-	      break;
-	    case enDMA_TRANSFER_MEM2MEM:
-	      /*!<
-	       *!< @brief Both destination and source offset enabled.
-	       *!< */
-	      if(cfg[index].offsetPerRequest != 0)
-		{
-		  HAL_DMA_SetSrcRequestOffset(cfg[index].channelNumber, enEnable);
-		  HAL_DMA_SetDstRequestOffset(cfg[index].channelNumber, enEnable);
-		  accessToMLOFF = TRUE;
-		}
-	      break;
-	    default:
-	      /*!<
-	       *!< @brief Incompatible configuration
-	       *!< */
-	      break;
-	  }
-	  /*!<
-	   *!< @brief If transfer type is valid the offset should be set.
-	   *!< */
-	  if (accessToMLOFF)
-	    {
-	      HAL_DMA_UseOffsetPerRequest(cfg[index].channelNumber, cfg[index].offsetPerRequest);
-	    }
-
-	}
-	HAL_DMA_SetRequestBlockSize(cfg[index].channelNumber, cfg[index].bytesPerRequest);
-
-	if (cfg[index].transferType != enDMA_TRANSFER_PERIPH2PERIPH &&
-	    cfg[index].transferType !=enDMA_TRANSFER_PERIPH2MEM)
-	  {
-	    /*!<
-	     *!< @brief Set the source address to starts with after finishing buffer transmission.
-	     *!< */
-	    if (cfg[index].bUseOtherSrcAddrOnFinish)
-	      {
-		HAL_DMA_SetSrcAddrAdjustment(cfg[index].channelNumber, cfg[index].srcAddrAdjustment);
-	      }
-	    else
-	      {
-		HAL_DMA_SetSrcAddrAdjustment(cfg[index].channelNumber, -(cfg[index].totalSize));
-	      }
-	  }
-	if (cfg[index].transferType != enDMA_TRANSFER_PERIPH2PERIPH &&
-	    cfg[index].transferType !=enDMA_TRANSFER_MEM2PERIPH)
-	  {
-	    /*!<
-	     *!< @brief Set the destination address to starts with after finishing buffer transmission.
-	     *!< 		The Scatter/Gather processing should be considered (not implemented)
-	     *!< */
-	    if (cfg[index].bUseOtherDstAddrOnFinish)
-	      {
-		HAL_DMA_SetDstAddrAdjustment(cfg[index].channelNumber, cfg[index].dstAddrOnFinish);
-	      }
-	    else
-	      {
-		HAL_DMA_SetDstAddrAdjustment(cfg[index].channelNumber, -(cfg[index].totalSize));
-	      }
-	  }
-
-	/*!<
-	 *!< @brief Set the link channel after minor loop termination.
-	 *!< */
-	HAL_DMA_ChannelsLinkOnRequestFinish(cfg[index].channelNumber, cfg[index].bUseLinkToChannelAfterRequest);
-	if (cfg[index].bUseLinkToChannelAfterRequest)
-	  {
-	    HAL_DMA_SetLinkedChannelOnRequestFinish(cfg[index].channelNumber, cfg[index].afterRequestLinkedChannel);
-	  }
-
-
-	/*!<
-	 *!< @brief Compute the request counts for buffer transmission.
-	 *!< */
-	if(cfg[index].totalSize % cfg[index].bytesPerRequest != 0)
-	{
-	    minorLoopCount = (cfg[index].totalSize/cfg[index].bytesPerRequest)+1;
-	}
-	else
-	{
-	    minorLoopCount = (cfg[index].totalSize/cfg[index].bytesPerRequest);
-	}
-	HAL_DMA_SetRequestCountToFinish(cfg[index].channelNumber, minorLoopCount);
-
-	/*!<
-	 *!< @brief Set the link channel after major loop termination.
-	 *!< */
-	HAL_DMA_ChannelsLinkOnRequestFinish(cfg[index].channelNumber, cfg[index].bUseLinkToChannelAfterFinish);
-	if (cfg[index].bUseLinkToChannelAfterFinish)
-	{
-	    HAL_DMA_SetLinkedChannelOnRequestFinish(cfg[index].channelNumber, cfg[index].afterFinishLinkedChannel);
-	}
-
-
-	/*!<
-	 *!< @brief Enable/disable Half transfer interrupt.
-	 *!< */
-	if (cfg[index].onHalfCallback != NULL)
-	  {
-	    HAL_DMA_HalfMajorLoopInterrupt(cfg[index].channelNumber, TRUE);
-	  }
-
-	/*!<
-	 *!< @brief Enable/disable Complete transfer interrupt.
-	 *!< */
-	if (cfg[index].onFinishCallback != NULL)
-	  {
-	    HAL_DMA_CompleteMajorLoopInterrupt(cfg[index].channelNumber, TRUE);
-	  }
-
-	/*!<
-	 *!< @brief Enable/disable Error interrupt.
-	 *!< */
-	if (cfg[index].onHalfCallback != NULL)
-	  {
-	    HAL_DMA_EnableErrorInterrupt(cfg[index].channelNumber, TRUE);
-	  }
-
-	if (cfg[index].bSingleBlockTransfer)
-	{
-	    HAL_DMA_DisableRequestAfterFinish(cfg[index].channelNumber);
-	}
-
     }
 }
 
@@ -324,6 +132,7 @@ void DMA_Config(const DMA_Channel_ConfigType *cfg, uint8_t channelsCount)
  */
 DMA_ChannelHdl_t DMA_StartChannel(DMA_ChannelHdl_t Handle)
 {
+    INT_SYS_EnableIRQ(Handle);
 	HAL_DMA_EnableRequest(Handle);
 	return Handle;
 }
@@ -340,7 +149,9 @@ DMA_ChannelHdl_t DMA_StartChannel(DMA_ChannelHdl_t Handle)
  */
 void DMA_StopChannel(DMA_ChannelHdl_t Handle)
 {
-	HAL_DMA_DisableRequestAfterFinish(Handle);
+  DMA_RemoveConfiguredChannel(Handle);
+  HAL_DMA_DisableRequestAfterFinish(Handle);
+  INT_SYS_DisableIRQ(Handle);
 }
 
 
@@ -355,12 +166,14 @@ void DMA_StopChannel(DMA_ChannelHdl_t Handle)
  *!<      The rationale of this constraint is that, on the peripheral side, the address offset is set to zero, allowing to read/write data from/to the peripheral in a single source read/destination write operation.
  *!< Parameters              :
  *!<                   Input : DMA_ChannelHdl_t Handle - Handle of the DMA channel to setup.
- *!<			     		 : DMA_TransferType_t TransferType - Transfer type (M->M, P->M, M->P, P->P)
- *!<			    		 : uint32_t SrcAddr - A source register address or a source memory address.
- *!<			    		 : uint32_t DestAddr - A destination register address or a destination memory address.
-			     	 	 	 : DMA_TransferSize_t TransferSize - The number of bytes to be transferred on every DMA write/read. Source/Dest share the same write/read size.
-			     	 	 	 : uint32_t BlockSize - The total number of bytes inside a block.
-			     	 	 	 : uint32_t BlockCount - The total number of data blocks (one block is transferred upon a DMA request).
+ *!<			     : DMA_TransferType_t TransferType - Transfer type (M->M, P->M, M->P, P->P)
+ *!<			     : uint32_t SrcAddr - A source register address or a source memory address.
+ *!<			     : uint32_t DestAddr - A destination register address or a destination memory address.
+			     : DMA_TransferSize_t TransferSize - The number of bytes to be transferred on every DMA write/read. Source/Dest share the same write/read size.
+			     : uint32_t BlockSize - The total number of bytes inside a block.
+			     : uint32_t BlockCount - The total number of data blocks (one block is transferred upon a DMA request).
+			     : DMA_RequestSource_t RequestSource
+			     : bool stopOnFinish
  *!<                   Output: None
  *!< Return                  : void
  *!< Critical section YES/NO : NO
@@ -372,26 +185,78 @@ void DMA_SetupMultiBlockTransfer(DMA_ChannelHdl_t Handle,
 				  DMA_TransferSize_t TransferSize,
 				  uint32_t BlockSize,
 				  uint32_t BlockCount,
-				  DMA_RequestSource_t RequestSource)
+				  DMA_RequestSource_t RequestSource,
+				  bool stopOnFinish)
 {
 
-	DMA_Channel_ConfigType cfg =
-	{
-		.bUseAddrMask = FALSE,
-		.bUseLinkToChannelAfterFinish = FALSE,
-		.bUseLinkToChannelAfterRequest = FALSE,
-		.bytesPerRequest = BlockSize,
-		.channelNumber = Handle,
-		.dstAddr = DestAddr,
-		.srcAddr = SrcAddr,
-		.offsetPerRequest = 1,
-		.transferType = TransferType,
-		.transferSize = TransferSize,
-		.totalSize = BlockCount,
-		.requestSource = RequestSource
+	DMA_Channel_ConfigType cfg = {
+	    .bUseAddrMask = FALSE,
+	    .bUseLinkToChannelAfterFinish = FALSE,
+	    .bUseLinkToChannelAfterRequest = FALSE,
+	    .bStopOnFinish = stopOnFinish,
+	    .bytesPerRequest = BlockSize,
+	    .channelNumber = Handle,
+	    .dstAddr = DestAddr,
+	    .srcAddr = SrcAddr,
+	    .offsetPerRequest = 0,
+	    .transferType = TransferType,
+	    .transferSize = TransferSize,
+	    .totalSize = (uint16_t)BlockSize*BlockCount,
+	    .requestSource = RequestSource,
 	};
 
 	DMA_Config(&cfg, 1);
+}
+
+
+/****************************************************************************************
+ *!< Function    	     : DMA_SetupScatterGatherTransfer
+ *!< @brief		     : This function configures the scatter-gather feature of DMA.
+ *!< 			     : When the major loop finished the new TCD structure copied to registers.
+ *!< Parameters              :
+ *!<                   Input : DMA_ChannelHdl_t Handle - Handle of the DMA channel to setup.
+ *!<                   	     : DMA_TransferType_t TransferType - Transfer type (M->M, P->M, M->P, P->P)
+ *!<                   	     : uint32_t SrcAddr - A source register address or a source memory address.
+ *!<                   	     : uint32_t DestAddr - A destination register address or a destination memory address.
+ *!<                   	     : DMA_TransferSize_t TransferSize - The number of bytes to be transferred on every DMA write/read. Source/Dest share the same write/read size.
+ *!<                   	     : uint32_t BlockSize - The total number of bytes inside a block.
+ *!<                   	     : uint32_t BlockCount - The total number of data blocks (one block is transferred upon a DMA request).
+ *!<                   	     : bool stopOnFinish -
+ *!<                   Output:
+ *!< Return                  : void
+ *!< Critical section YES/NO : NO
+ */
+void DMA_SetupScatterGatherTransfer(DMA_ChannelHdl_t Handle,
+				    uint32_t transferControl,
+				    DMA_TransferType_t TransferType,
+				    uint32_t SrcAddr,
+				    uint32_t DestAddr,
+				    DMA_TransferSize_t TransferSize,
+				    uint32_t BlockSize,
+				    uint32_t BlockCount,
+				    DMA_RequestSource_t RequestSource,
+				    bool stopOnFinish)
+{
+  uint32_t transferCtrlReg = HAL_DMA_GetTransferControl(Handle);
+
+  DMA_Channel_ConfigType cfg = {
+      .bUseAddrMask = FALSE,
+      .bUseLinkToChannelAfterFinish = FALSE,
+      .bUseLinkToChannelAfterRequest = FALSE,
+      .bStopOnFinish = TRUE,
+      .bytesPerRequest = BlockSize,
+      .dstAddr = DestAddr,
+      .srcAddr = SrcAddr,
+      .offsetPerRequest = 0,
+      .transferType = TransferType,
+      .transferSize = TransferSize,
+      .totalSize = (uint16_t)BlockSize*BlockCount,
+      .requestSource = RequestSource,
+  };
+
+  DMA_ConfigTransferControl(transferControl, &cfg);
+  HAL_DMA_SetDstAddrAdjustment(transferCtrlReg, transferControl);
+  HAL_DMA_EnableScatterGather(transferCtrlReg, TRUE);
 }
 
 
@@ -414,6 +279,220 @@ uint32_t DMA_GetCurrentBlockIteration(DMA_ChannelHdl_t Handle)
 }
 
 
+/****************************************************************************************
+ *!< Function    	     : DMA_ConfigTransferControl
+ *!< @brief		     : This function configures the TCD structure. The parameter can be either pointer to TCD register
+ *!< 			     : or TCD like memory structure
+ *!< Parameters              :
+ *!<                   Input : uint32_t transferCtrlPtr
+ *!<                   Output:
+ *!< Return                  : Std_ReturnType
+ *!< Critical section YES/NO : YESNO
+ */
+Std_ReturnType DMA_ConfigTransferControl(uint32_t transferCtrlPtr, DMA_Channel_ConfigType *cfg)
+{
+
+  uint8_t accessToMLOFF = FALSE;
+  uint16_t minorLoopCount = 1;
+  Std_ReturnType response = E_OK;
+
+  HAL_DMA_ClearTransferControlDescriptor(transferCtrlPtr);
+
+  /*!<
+   *!< @brief Configure the source and destination offset after request.
+   *!< */
+  switch (cfg->transferType) {
+
+    case enDMA_TRANSFER_PERIPH2MEM:
+      /*!<
+       *!< @brief Only destination offset is enabled.
+       *!< */
+      if(cfg->offsetPerRequest != 0)
+	{
+	  HAL_DMA_SetDstRequestOffset(transferCtrlPtr, enEnable);
+	  accessToMLOFF = TRUE;
+	}
+
+      cfg->srcTransferOffset = 0;
+      cfg->dstTransferOffset = (uint16_t)cfg->transferSize;
+      break;
+
+    case enDMA_TRANSFER_MEM2PERIPH:
+      /*!<
+       *!< @brief Only source offset is enabled.
+       *!< */
+      if(cfg->offsetPerRequest != 0)
+	{
+	  HAL_DMA_SetSrcRequestOffset(transferCtrlPtr, enEnable);
+	  accessToMLOFF = TRUE;
+	}
+
+      cfg->srcTransferOffset = (uint16_t)cfg->transferSize;
+      cfg->dstTransferOffset = 0;
+      break;
+
+    case enDMA_TRANSFER_MEM2MEM:
+      /*!<
+       *!< @brief Both destination and source offset enabled.
+       *!< */
+      if(cfg->offsetPerRequest != 0)
+	{
+	  HAL_DMA_SetSrcRequestOffset(transferCtrlPtr, enEnable);
+	  HAL_DMA_SetDstRequestOffset(transferCtrlPtr, enEnable);
+	  accessToMLOFF = TRUE;
+	}
+
+      cfg->srcTransferOffset = (uint16_t)cfg->transferSize;
+      cfg->dstTransferOffset = (uint16_t)cfg->transferSize;
+      break;
+
+    default:
+
+      cfg->srcTransferOffset = 0;
+      cfg->dstTransferOffset = 0;
+      break;
+  }
+  /*!<
+   *!< @brief If transfer type is valid the offset should be set.
+   *!< */
+  if (accessToMLOFF)
+    {
+      HAL_DMA_UseOffsetPerRequest(transferCtrlPtr, cfg->offsetPerRequest);
+    }
+
+  HAL_DMA_SetRequestBlockSize(transferCtrlPtr, cfg->bytesPerRequest);
+
+  /*!<
+   *!< @brief Configure the initial source and destination addresses.
+   *!< */
+  HAL_DMA_SetSrcAddr(transferCtrlPtr, cfg->srcAddr);
+  HAL_DMA_SetDstAddr(transferCtrlPtr, cfg->dstAddr);
+
+  /*!<
+   *!< @brief Configure the source read/destination write size
+   *!< */
+  HAL_DMA_SetSrcTransferSize(transferCtrlPtr, cfg->transferSize);
+  HAL_DMA_SetDstTransferSize(transferCtrlPtr, cfg->transferSize);
+
+  /*!<
+   *!< @brief Configure the offset after each source read/destination write operation.
+   *!< */
+  HAL_DMA_SetSrcTransferOffset(transferCtrlPtr, cfg->srcTransferOffset);
+  HAL_DMA_SetDstTransferOffset(transferCtrlPtr, cfg->dstTransferOffset);
+
+  /*!<
+   *!< @brief Configure the cyclic buffer transmission of 2^n bytes (n - value of mask).
+   *!< */
+  if (cfg->bUseAddrMask)
+    {
+      HAL_DMA_SetSrcAddrMask(transferCtrlPtr, cfg->srcAddrMask);
+      HAL_DMA_SetDstAddrMask(transferCtrlPtr, cfg->dstAddrMask);
+    }
+  else
+    {
+      /*!<
+       *!< @brief Disable modulo feature.
+       *!< */
+      HAL_DMA_SetSrcAddrMask(transferCtrlPtr, 0x00);
+      HAL_DMA_SetDstAddrMask(transferCtrlPtr, 0x00);
+    }
+
+  if (cfg->transferType != enDMA_TRANSFER_PERIPH2PERIPH &&
+      cfg->transferType !=enDMA_TRANSFER_PERIPH2MEM)
+    {
+      /*!<
+       *!< @brief Set the source address to starts with after finishing buffer transmission.
+       *!< */
+      if (cfg->bUseOtherSrcAddrOnFinish)
+	{
+	  HAL_DMA_SetSrcAddrAdjustment(transferCtrlPtr, cfg->srcAddrAdjustment);
+	}
+      else
+	{
+	  HAL_DMA_SetSrcAddrAdjustment(transferCtrlPtr, -(cfg->totalSize));
+	}
+    }
+  if (cfg->transferType != enDMA_TRANSFER_PERIPH2PERIPH &&
+      cfg->transferType !=enDMA_TRANSFER_MEM2PERIPH)
+    {
+      /*!<
+       *!< @brief Set the destination address to starts with after finishing buffer transmission.
+       *!< 		The Scatter/Gather processing should be considered (not implemented)
+       *!< */
+      if (cfg->bUseOtherDstAddrOnFinish)
+	{
+	  HAL_DMA_SetDstAddrAdjustment(transferCtrlPtr, cfg->dstAddrOnFinish);
+	}
+      else
+	{
+	  HAL_DMA_SetDstAddrAdjustment(transferCtrlPtr, -(cfg->totalSize));
+	}
+    }
+
+  /*!<
+   *!< @brief Set the link channel after minor loop termination.
+   *!< */
+  HAL_DMA_ChannelsLinkOnRequestFinish(transferCtrlPtr, cfg->bUseLinkToChannelAfterRequest);
+  if (cfg->bUseLinkToChannelAfterRequest)
+    {
+      HAL_DMA_SetLinkedChannelOnRequestFinish(transferCtrlPtr, cfg->afterRequestLinkedChannel);
+    }
+
+  /*!<
+   *!< @brief Compute the request counts for buffer transmission.
+   *!< */
+  if(cfg->totalSize % cfg->bytesPerRequest != 0)
+    {
+      minorLoopCount = (cfg->totalSize/cfg->bytesPerRequest)+1;
+    }
+  else
+    {
+      minorLoopCount = (cfg->totalSize/cfg->bytesPerRequest);
+    }
+  HAL_DMA_SetRequestCountToFinish(transferCtrlPtr, minorLoopCount);
+
+  /*!<
+   *!< @brief Set the link channel after major loop termination.
+   *!< */
+  HAL_DMA_ChannelsLinkOnRequestFinish(transferCtrlPtr, cfg->bUseLinkToChannelAfterFinish);
+  if (cfg->bUseLinkToChannelAfterFinish)
+    {
+      HAL_DMA_SetLinkedChannelOnRequestFinish(transferCtrlPtr, cfg->afterFinishLinkedChannel);
+    }
+
+  /*!<
+   *!< @brief Enable/disable Half transfer interrupt.
+   *!< */
+  if (cfg->onHalfCallback != NULL)
+    {
+      HAL_DMA_HalfMajorLoopInterrupt(transferCtrlPtr, TRUE);
+    }
+
+  /*!<
+   *!< @brief Enable/disable Complete transfer interrupt.
+   *!< */
+  if (cfg->onFinishCallback != NULL)
+    {
+      HAL_DMA_CompleteMajorLoopInterrupt(transferCtrlPtr, TRUE);
+    }
+
+  /*!<
+   *!< @brief Enable/disable Error interrupt.
+   *!< */
+  if (cfg->onErrorCallback != NULL)
+    {
+      HAL_DMA_EnableErrorInterrupt(transferCtrlPtr, TRUE);
+    }
+
+  if (cfg->bStopOnFinish)
+    {
+      HAL_DMA_DisableRequestAfterFinish(transferCtrlPtr);
+    }
+
+  return response;
+}
+
+
 
 /****************************************************************************************
  *!< Function    	    	 : DMA_Shutdown
@@ -429,6 +508,134 @@ void DMA_Shutdown(void)
 	HAL_DMA_DisableAllRequests();
 	HAL_DMA_DisableAllErrorInterrupts();
 }
+
+
+/****************************************************************************************
+ *!< Function    	     : DMA_InstallCallback
+ *!< @brief		     : Install callback on specified event.
+ *!< Parameters              :
+ *!<                   Input : DMA_ChannelHdl_t Handle -
+ *!<                         : DMA_EVENT_t event -
+ *!<                         : void (*func)(void*) -
+ *!<                   Output: None
+ *!< Return                  : void
+ *!< Critical section YES/NO : NO
+ */
+void DMA_InstallCallback(uint32_t transferControl, DMA_EVENT_t event, void (*func)(void*), void* callbackParameter)
+{
+  uint32_t chNumber;
+  DMA_Channel_ConfigType *channel;
+
+  if (transferControl < DMA_TOTAL_CHANNELS)
+    {
+      chNumber = transferControl;
+      transferControl = HAL_DMA_GetTransferControl(chNumber);
+    }
+  else
+    {
+      chNumber = HAL_DMA_GetChnNrByTcd(transferControl);
+      if (chNumber >= DMA_TOTAL_CHANNELS){
+	  return;
+      }
+    }
+  channel = &DMA_ChannelsConfig[chNumber];
+
+  switch (event) {
+    case enDMA_On_Finish:
+      channel->onFinishCallback = func;
+      channel->onFinishCallbackParameter = callbackParameter;
+      HAL_DMA_CompleteMajorLoopInterrupt(transferControl, TRUE);
+      break;
+
+    case enDMA_On_Half:
+      channel->onHalfCallback = func;
+      channel->onHalfCallbackParameter = callbackParameter;
+      HAL_DMA_HalfMajorLoopInterrupt(transferControl, TRUE);
+      break;
+
+    case enDMA_On_Error:
+      channel->onErrorCallback = func;
+      channel->onErrorCallbackParameter = callbackParameter;
+      HAL_DMA_EnableErrorInterrupt(transferControl, TRUE);
+      break;
+
+    default:
+      break;
+  }
+}
+
+
+/****************************************************************************************
+ *!< Function    	     : DMA_InstallCallback
+ *!< @brief		     : Install callback on specified event.
+ *!< Parameters              :
+ *!<                   Input : DMA_ChannelHdl_t Handle -
+ *!<                         : DMA_EVENT_t event -
+ *!<                         : void (*func)(void*) -
+ *!<                   Output: None
+ *!< Return                  : void
+ *!< Critical section YES/NO : NO
+ */
+void DMA_InstallChannelLinkage(uint32_t transferControlOrChn, DMA_ChannelHdl_t HandleLinked)
+{
+  uint32_t chNumber;
+  DMA_Channel_ConfigType *channel;
+
+  if (transferControlOrChn < DMA_TOTAL_CHANNELS)
+    {
+      chNumber = transferControlOrChn;
+      transferControlOrChn = HAL_DMA_GetTransferControl(chNumber);
+    }
+  else
+    {
+      chNumber = HAL_DMA_GetChnNrByTcd(transferControlOrChn);
+      if (chNumber >= DMA_TOTAL_CHANNELS){
+	  return;
+      }
+    }
+  channel = &DMA_ChannelsConfig[chNumber];
+
+  channel->bUseLinkToChannelAfterRequest = TRUE;
+  channel->afterRequestLinkedChannel = HandleLinked;
+  HAL_DMA_SetLinkedChannelOnRequestFinish(transferControlOrChn, HandleLinked);
+}
+
+
+/****************************************************************************************
+ *!< Function    	     : DMA_InstallCallback
+ *!< @brief		     : Install callback on specified event.
+ *!< Parameters              :
+ *!<                   Input : DMA_ChannelHdl_t Handle -
+ *!<                         : DMA_EVENT_t event -
+ *!<                         : void (*func)(void*) -
+ *!<                   Output: None
+ *!< Return                  : void
+ *!< Critical section YES/NO : NO
+ */
+void DMA_InstallChannelOnFinishLinkage(uint32_t transferControlOrChn, DMA_ChannelHdl_t HandleLinked)
+{
+  uint32_t chNumber;
+  DMA_Channel_ConfigType *channel;
+
+  if (transferControlOrChn < DMA_TOTAL_CHANNELS)
+    {
+      chNumber = transferControlOrChn;
+      transferControlOrChn = HAL_DMA_GetTransferControl(chNumber);
+    }
+  else
+    {
+      chNumber = HAL_DMA_GetChnNrByTcd(transferControlOrChn);
+      if (chNumber >= DMA_TOTAL_CHANNELS){
+	  return;
+      }
+    }
+  channel = &DMA_ChannelsConfig[chNumber];
+
+  channel->bUseLinkToChannelAfterFinish = TRUE;
+  channel->afterFinishLinkedChannel = HandleLinked;
+  HAL_DMA_SetLinkedChannelOnMajorLoop(transferControlOrChn, HandleLinked);
+}
+
 
 
 /****************************************************************************************
@@ -462,5 +669,5 @@ DMA_State_t DMA_GetState(void)
 	return dmaState;
 }
 
-
+#endif /* USE_DMA */
 /************************************** END OF FILE **********************************************/

@@ -1,16 +1,3 @@
-/************************** (C) 2018 BSS-ONE ******************************************************
- *  @verbatim
- *   Copyright (C) 2018 BSS-ONE
- *   All Rights Reserved.
- *
- *   The reproduction, transmission or use of this document or its contents is not permitted
- *   without express written authority.
- *   Offenders will be liable for damages. All rights, including rights created
- *   by patent grant or registration of a utility model or design, are reserved.
- * @endverbatim
- **************************************************************************************************
- */
-
 /********************************************* Login **********************************************
  *!< File Name 					: dma.h
  *!< Author   	        		: Dumitru Parascan
@@ -48,10 +35,11 @@
 
 
 /*!< Include section --------------------------------------------------------------------------- */
-
+#include "Modules.h"
 #include "Dma_Cfg.h"
 #include "Dma_irq.h"
 
+#ifdef USE_DMA
 /*!< Type definitions section ------------------------------------------------------------------ */
 
 
@@ -157,7 +145,37 @@ void DMA_SetupMultiBlockTransfer(DMA_ChannelHdl_t Handle,
 				  DMA_TransferSize_t TransferSize,
 				  uint32_t BlockSize,
 				  uint32_t BlockCount,
-				  DMA_RequestSource_t RequestSource);
+				  DMA_RequestSource_t RequestSource,
+				  bool stopOnFinish);
+
+
+/****************************************************************************************
+ *!< Function    	     : DMA_SetupScatterGatherTransfer
+ *!< @brief		     : This function configures the scatter-gather feature of DMA.
+ *!< 			     : When the major loop finished the new TCD structure copied to registers.
+ *!< Parameters              :
+ *!<                   Input : uint32_t transferControl -
+ *!<                   	     : DMA_TransferType_t TransferType - Transfer type (M->M, P->M, M->P, P->P)
+ *!<                   	     : uint32_t SrcAddr - A source register address or a source memory address.
+ *!<                   	     : uint32_t DestAddr - A destination register address or a destination memory address.
+ *!<                   	     : DMA_TransferSize_t TransferSize - The number of bytes to be transferred on every DMA write/read. Source/Dest share the same write/read size.
+ *!<                   	     : uint32_t BlockSize - The total number of bytes inside a block.
+ *!<                   	     : uint32_t BlockCount - The total number of data blocks (one block is transferred upon a DMA request).
+ *!<                   	     : bool stopOnFinish -
+ *!<                   Output:
+ *!< Return                  : void
+ *!< Critical section YES/NO : NO
+ */
+void DMA_SetupScatterGatherTransfer(DMA_ChannelHdl_t Handle,
+				    uint32_t transferControl,
+				    DMA_TransferType_t TransferType,
+				    uint32_t SrcAddr,
+				    uint32_t DestAddr,
+				    DMA_TransferSize_t TransferSize,
+				    uint32_t BlockSize,
+				    uint32_t BlockCount,
+				    DMA_RequestSource_t RequestSource,
+				    bool stopOnFinish);
 
 
 
@@ -176,6 +194,19 @@ void DMA_SetupMultiBlockTransfer(DMA_ChannelHdl_t Handle,
 uint32_t DMA_GetCurrentBlockIteration(DMA_ChannelHdl_t Handle);
 
 
+/****************************************************************************************
+ *!< Function    	     : DMA_ConfigTransferControl
+ *!< @brief		     : This function configures the TCD structure. The parameter can be either pointer to TCD register
+ *!< 			     : or TCD like memory structure
+ *!< Parameters              :
+ *!<                   Input : uint32_t transferCtrlPtr
+ *!<                   Output:
+ *!< Return                  : Std_ReturnType
+ *!< Critical section YES/NO : YESNO
+ */
+Std_ReturnType DMA_ConfigTransferControl(uint32_t transferCtrlPtr, DMA_Channel_ConfigType *cfg);
+
+
 
 /****************************************************************************************
  *!< Function    	    	 : DMA_Shutdown
@@ -187,6 +218,49 @@ uint32_t DMA_GetCurrentBlockIteration(DMA_ChannelHdl_t Handle);
  *!< Critical section YES/NO : NO
  */
 void DMA_Shutdown(void);
+
+
+
+/****************************************************************************************
+ *!< Function    	     : DMA_InstallCallback
+ *!< @brief		     : Install callback on specified event.
+ *!< Parameters              :
+ *!<                   Input : DMA_ChannelHdl_t Handle -
+ *!<                         : DMA_EVENT_t event -
+ *!<                         : void (*func)(void*) -
+ *!<                   Output: None
+ *!< Return                  : void
+ *!< Critical section YES/NO : NO
+ */
+void DMA_InstallCallback(uint32_t transferControl, DMA_EVENT_t event, void (*func)(void*), void* parameter);
+
+
+/****************************************************************************************
+ *!< Function    	     : DMA_InstallCallback
+ *!< @brief		     : Install callback on specified event.
+ *!< Parameters              :
+ *!<                   Input : DMA_ChannelHdl_t Handle -
+ *!<                         : DMA_EVENT_t event -
+ *!<                         : void (*func)(void*) -
+ *!<                   Output: None
+ *!< Return                  : void
+ *!< Critical section YES/NO : NO
+ */
+void DMA_InstallChannelLinkage(uint32_t transferControlOrChn, DMA_ChannelHdl_t HandleLinked);
+
+
+/****************************************************************************************
+ *!< Function    	     : DMA_InstallCallback
+ *!< @brief		     : Install callback on specified event.
+ *!< Parameters              :
+ *!<                   Input : DMA_ChannelHdl_t Handle -
+ *!<                         : DMA_EVENT_t event -
+ *!<                         : void (*func)(void*) -
+ *!<                   Output: None
+ *!< Return                  : void
+ *!< Critical section YES/NO : NO
+ */
+void DMA_InstallChannelOnFinishLinkage(uint32_t transferControlOrChn, DMA_ChannelHdl_t HandleLinked);
 
 
 
@@ -207,7 +281,7 @@ DMA_State_t DMA_GetState(void);
 	}
 #endif /* __cplusplus */
 
-
+#endif /* USE_DMA */
 #endif /* DMA_H_ */
 
 

@@ -1,16 +1,3 @@
-/************************** (C) 2018 BSS-ONE ******************************************************
- *  @verbatim
- *   Copyright (C) 2018 BSS-ONE
- *   All Rights Reserved.
- *
- *   The reproduction, transmission or use of this document or its contents is not permitted
- *   without express written authority.
- *   Offenders will be liable for damages. All rights, including rights created
- *   by patent grant or registration of a utility model or design, are reserved.
- * @endverbatim
- **************************************************************************************************
- */
-
 /********************************************* Login **********************************************
  *!< File Name 					: DMA_Cfg.h
  *!< Author   	        		: Dumitru Parascan
@@ -50,7 +37,7 @@
 /*!< Include section --------------------------------------------------------------------------- */
 
 #include "hal_dmaif.h"
-
+#ifdef USE_DMA
 /*!< Type definitions section ------------------------------------------------------------------ */
 
 
@@ -58,13 +45,13 @@
 
 /*!< Definitions section ----------------------------------------------------------------------- */
 
-#define DMA_USED_CHANNELS 0
+#define DMA_INITIALY_USED_CHANNELS 0
 
 
 /*!< Exported variables section ---------------------------------------------------------------- */
 
-extern DMA_ConfigType DMA_ConfigData;
-extern DMA_Channel_ConfigType DMA_ChannelsConfig[DMA_USED_CHANNELS];
+extern DMA_ConfigType DMA_ConfigDevice;
+extern DMA_Channel_ConfigType DMA_ChannelsConfig[DMA_TOTAL_CHANNELS];
 
 
 /*!< Functions prototypes sections ------------------------------------------------------------- */
@@ -97,15 +84,52 @@ void DMA_ConfigMap(void);
 
 
 /****************************************************************************************
- *!< Function    	     : DMA_GetChannelConfigIndex
- *!< @brief		     : Get the index of channel in configuration array
+ *!< Function    	     : DMA_GetNumberOfConfiguredChannels
+ *!< @brief		     : Get the number of configured DMA channels
  *!< Parameters              :
- *!<                   Input : uint8_t channel
+ *!<                   Input :
  *!<                   Output:
- *!< Return                  : uint8_t
+ *!< Return                  : Number of configured DMA channels
  *!< Critical section YES/NO : NO
  */
-uint8_t DMA_GetChannelConfigIndex(uint8_t channel);
+uint8_t DMA_GetNumberOfConfiguredChannels(void);
+
+
+/****************************************************************************************
+ *!< Function    	     : DMA_AddConfiguredChannel
+ *!< @brief		     : Indicates that one channel is configured
+ *!< Parameters              :
+ *!<                   Input : -
+ *!<                   Output: -
+ *!< Return                  : -
+ *!< Critical section YES/NO : NO
+ */
+void DMA_AddConfiguredChannel(DMA_Channel_ConfigType channelCfg);
+
+
+/****************************************************************************************
+ *!< Function    	     : DMA_RemoveConfiguredChannel
+ *!< @brief		     : Indicates that one channel is configured
+ *!< Parameters              :
+ *!<                   Input : -
+ *!<                   Output: -
+ *!< Return                  : -
+ *!< Critical section YES/NO : NO
+ */
+void DMA_RemoveConfiguredChannel(uint8_t channel);
+
+
+
+/****************************************************************************************
+ *!< Function    	     : DMA_isChannelConfigured
+ *!< @brief		     : Check if "channel" is configured
+ *!< Parameters              :
+ *!<                   Input : uint8_t channel - should be verified if configured
+ *!<                   Output: -
+ *!< Return                  : -
+ *!< Critical section YES/NO : NO
+ */
+bool DMA_isChannelConfigured(uint8_t channel);
 
 
 /*!< C++ banding section finish ---------------------------------------------------------------- */
@@ -113,7 +137,7 @@ uint8_t DMA_GetChannelConfigIndex(uint8_t channel);
 	}
 #endif /* __cplusplus */
 
-
+#endif /* USE_DMA */
 #endif /* DMA_CFG_H_ */
 
 

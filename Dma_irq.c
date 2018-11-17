@@ -1,24 +1,11 @@
-/************************** (C) 2018 BSS-ONE ******************************************************
- *  @verbatim
- *   Copyright (C) 2018 BSS-ONE
- *   All Rights Reserved.
- *
- *   The reproduction, transmission or use of this document or its contents is not permitted
- *   without express written authority.
- *   Offenders will be liable for damages. All rights, including rights created
- *   by patent grant or registration of a utility model or design, are reserved.
- * @endverbatim
- **************************************************************************************************
- */
-
 /********************************************* Login **********************************************
- *!< File Name 				: Dma_irq.c
+ *!< File Name 					: Dma_irq.c
  *!< Author   	        		: Dumitru Parascan
  *!< Version	        		: V1.0
  *!< Date     		        	: Sep 13, 2018
- *!< @brief		        	: 
- *!<                           		: (see note at the end of the file)
- *!< Modifiable YES/NO		    	: 
+ *!< @brief		        		: 
+ *!<                           	: (see note at the end of the file)
+ *!< Modifiable YES/NO		    : 
  *!< Critical explanation		: 
  **************************************************************************************************
  */
@@ -42,7 +29,7 @@
 #include "Dma_irq.h"
 #include "hal_dma.h"
 #include "Dma_Cfg.h"
-
+#ifdef USE_DMA
 /*<! Definitions section ----------------------------------------------------------------------- */
 
 #define IS_EMPTY(x)  (x == 0)
@@ -62,6 +49,44 @@
 
 /*!< Static functions definition sections ------------------------------------------------------ */
 
+void DMA_InterruptHandler(uint8_t channel)
+{
+	uint16_t remainsBlockSize;
+	uint32_t transferControl = HAL_DMA_GetTransferControl(channel);
+	uint32_t totalSize = HAL_DMA_GetTotalSize(transferControl);
+
+	HAL_DMA_ClearInterruptFlag(channel);
+
+	remainsBlockSize = HAL_DMA_GetBlockIteration(transferControl);
+
+	DMA_RemoveConfiguredChannel(DMA_ChannelsConfig[channel].channelNumber);
+	HAL_DMA_ClearDoneFlag(transferControl);
+
+	if (remainsBlockSize == totalSize || IS_EMPTY(remainsBlockSize) )
+	{
+		if(DMA_ChannelsConfig[channel].onFinishCallbackParameter == NULL)
+		{
+			DMA_ChannelsConfig[channel].onFinishCallback((void*)&DMA_ChannelsConfig[channel].channelNumber);
+		}
+		else
+		{
+			DMA_ChannelsConfig[channel].onFinishCallback(DMA_ChannelsConfig[channel].onFinishCallbackParameter);
+		}
+	}
+	else
+	{
+		if (remainsBlockSize == (totalSize>>1) ) {
+			if(DMA_ChannelsConfig[channel].onHalfCallbackParameter == NULL)
+			{
+				DMA_ChannelsConfig[channel].onHalfCallback((void*)&DMA_ChannelsConfig[channel].channelNumber);
+			}
+			else
+			{
+				DMA_ChannelsConfig[channel].onHalfCallback(DMA_ChannelsConfig[channel].onHalfCallbackParameter);
+			}
+		}
+	}
+}
 
 /*!< Function definitions ---------------------------------------------------------------------- */
 
@@ -76,22 +101,7 @@
  */
 void DMA0_IRQHandler(void)
 {
-  uint8_t channel_0_Index;
-  uint16_t remainsBlockSize;
-
-  HAL_DMA_ClearInterruptFlag(DMA_CHANNEL_0);
-
-  channel_0_Index = DMA_GetChannelConfigIndex(DMA_CHANNEL_0);
-  remainsBlockSize = HAL_DMA_GetBlockIteration(DMA_CHANNEL_0);
-
-  if (remainsBlockSize == HAL_DMA_GetTotalSize(DMA_CHANNEL_0) || IS_EMPTY(remainsBlockSize))
-    {
-      DMA_ChannelsConfig[channel_0_Index].onFinishCallback();
-    }
-  else
-    {
-      DMA_ChannelsConfig[channel_0_Index].onHalfCallback();
-    }
+	DMA_InterruptHandler(0);
 }
 
 
@@ -107,22 +117,7 @@ void DMA0_IRQHandler(void)
  */
 void DMA1_IRQHandler(void)
 {
-  uint8_t channel_1_Index;
-  uint16_t remainsBlockSize;
-
-  HAL_DMA_ClearInterruptFlag(DMA_CHANNEL_1);
-
-  channel_1_Index = DMA_GetChannelConfigIndex(DMA_CHANNEL_1);
-  remainsBlockSize = HAL_DMA_GetBlockIteration(DMA_CHANNEL_1);
-
-  if (remainsBlockSize == HAL_DMA_GetTotalSize(DMA_CHANNEL_1) || IS_EMPTY(remainsBlockSize))
-    {
-      DMA_ChannelsConfig[channel_1_Index].onFinishCallback();
-    }
-  else
-    {
-      DMA_ChannelsConfig[channel_1_Index].onHalfCallback();
-    }
+	DMA_InterruptHandler(1);
 }
 
 
@@ -138,22 +133,7 @@ void DMA1_IRQHandler(void)
  */
 void DMA2_IRQHandler(void)
 {
-  uint8_t channel_2_Index;
-  uint16_t remainsBlockSize;
-
-  HAL_DMA_ClearInterruptFlag(DMA_CHANNEL_2);
-
-  channel_2_Index = DMA_GetChannelConfigIndex(DMA_CHANNEL_2);
-  remainsBlockSize = HAL_DMA_GetBlockIteration(DMA_CHANNEL_2);
-
-  if (remainsBlockSize == HAL_DMA_GetTotalSize(DMA_CHANNEL_2) || IS_EMPTY(remainsBlockSize))
-    {
-      DMA_ChannelsConfig[channel_2_Index].onFinishCallback();
-    }
-  else
-    {
-      DMA_ChannelsConfig[channel_2_Index].onHalfCallback();
-    }
+	DMA_InterruptHandler(2);
 }
 
 
@@ -169,22 +149,7 @@ void DMA2_IRQHandler(void)
  */
 void DMA3_IRQHandler(void)
 {
-  uint8_t channel_3_Index;
-  uint16_t remainsBlockSize;
-
-  HAL_DMA_ClearInterruptFlag(DMA_CHANNEL_3);
-
-  channel_3_Index = DMA_GetChannelConfigIndex(DMA_CHANNEL_3);
-  remainsBlockSize = HAL_DMA_GetBlockIteration(DMA_CHANNEL_3);
-
-  if (remainsBlockSize == HAL_DMA_GetTotalSize(DMA_CHANNEL_3) || IS_EMPTY(remainsBlockSize))
-    {
-      DMA_ChannelsConfig[channel_3_Index].onFinishCallback();
-    }
-  else
-    {
-      DMA_ChannelsConfig[channel_3_Index].onHalfCallback();
-    }
+	DMA_InterruptHandler(3);
 }
 
 
@@ -200,22 +165,7 @@ void DMA3_IRQHandler(void)
  */
 void DMA4_IRQHandler(void)
 {
-  uint8_t channel_4_Index;
-  uint16_t remainsBlockSize;
-
-  HAL_DMA_ClearInterruptFlag(DMA_CHANNEL_4);
-
-  channel_4_Index = DMA_GetChannelConfigIndex(DMA_CHANNEL_4);
-  remainsBlockSize = HAL_DMA_GetBlockIteration(DMA_CHANNEL_4);
-
-  if (remainsBlockSize == HAL_DMA_GetTotalSize(DMA_CHANNEL_4) || IS_EMPTY(remainsBlockSize))
-    {
-      DMA_ChannelsConfig[channel_4_Index].onFinishCallback();
-    }
-  else
-    {
-      DMA_ChannelsConfig[channel_4_Index].onHalfCallback();
-    }
+	DMA_InterruptHandler(4);
 }
 
 
@@ -231,22 +181,7 @@ void DMA4_IRQHandler(void)
  */
 void DMA5_IRQHandler(void)
 {
-  uint8_t channel_5_Index;
-  uint16_t remainsBlockSize;
-
-  HAL_DMA_ClearInterruptFlag(DMA_CHANNEL_5);
-
-  channel_5_Index = DMA_GetChannelConfigIndex(DMA_CHANNEL_5);
-  remainsBlockSize = HAL_DMA_GetBlockIteration(DMA_CHANNEL_5);
-
-  if (remainsBlockSize == HAL_DMA_GetTotalSize(DMA_CHANNEL_5) || IS_EMPTY(remainsBlockSize))
-    {
-      DMA_ChannelsConfig[channel_5_Index].onFinishCallback();
-    }
-  else
-    {
-      DMA_ChannelsConfig[channel_5_Index].onHalfCallback();
-    }
+	DMA_InterruptHandler(5);
 }
 
 
@@ -262,22 +197,7 @@ void DMA5_IRQHandler(void)
  */
 void DMA6_IRQHandler(void)
 {
-  uint8_t channel_6_Index;
-  uint16_t remainsBlockSize;
-
-  HAL_DMA_ClearInterruptFlag(DMA_CHANNEL_6);
-
-  channel_6_Index = DMA_GetChannelConfigIndex(DMA_CHANNEL_6);
-  remainsBlockSize = HAL_DMA_GetBlockIteration(DMA_CHANNEL_6);
-
-  if (remainsBlockSize == HAL_DMA_GetTotalSize(DMA_CHANNEL_6) || IS_EMPTY(remainsBlockSize))
-    {
-      DMA_ChannelsConfig[channel_6_Index].onFinishCallback();
-    }
-  else
-    {
-      DMA_ChannelsConfig[channel_6_Index].onHalfCallback();
-    }
+	DMA_InterruptHandler(6);
 }
 
 
@@ -293,22 +213,7 @@ void DMA6_IRQHandler(void)
  */
 void DMA7_IRQHandler(void)
 {
-  uint8_t channel_7_Index;
-  uint16_t remainsBlockSize;
-
-  HAL_DMA_ClearInterruptFlag(DMA_CHANNEL_7);
-
-  channel_7_Index = DMA_GetChannelConfigIndex(DMA_CHANNEL_7);
-  remainsBlockSize = HAL_DMA_GetBlockIteration(DMA_CHANNEL_7);
-
-  if (remainsBlockSize == HAL_DMA_GetTotalSize(DMA_CHANNEL_7) || IS_EMPTY(remainsBlockSize))
-    {
-      DMA_ChannelsConfig[channel_7_Index].onFinishCallback();
-    }
-  else
-    {
-      DMA_ChannelsConfig[channel_7_Index].onHalfCallback();
-    }
+	DMA_InterruptHandler(7);
 }
 
 
@@ -324,22 +229,7 @@ void DMA7_IRQHandler(void)
  */
 void DMA8_IRQHandler(void)
 {
-  uint8_t channel_8_Index;
-  uint16_t remainsBlockSize;
-
-  HAL_DMA_ClearInterruptFlag(DMA_CHANNEL_8);
-
-  channel_8_Index = DMA_GetChannelConfigIndex(DMA_CHANNEL_8);
-  remainsBlockSize = HAL_DMA_GetBlockIteration(DMA_CHANNEL_8);
-
-  if (remainsBlockSize == HAL_DMA_GetTotalSize(DMA_CHANNEL_8) || IS_EMPTY(remainsBlockSize))
-    {
-      DMA_ChannelsConfig[channel_8_Index].onFinishCallback();
-    }
-  else
-    {
-      DMA_ChannelsConfig[channel_8_Index].onHalfCallback();
-    }
+	DMA_InterruptHandler(8);
 }
 
 
@@ -355,22 +245,7 @@ void DMA8_IRQHandler(void)
  */
 void DMA9_IRQHandler(void)
 {
-  uint8_t channel_9_Index;
-  uint16_t remainsBlockSize;
-
-  HAL_DMA_ClearInterruptFlag(DMA_CHANNEL_9);
-
-  channel_9_Index = DMA_GetChannelConfigIndex(DMA_CHANNEL_9);
-  remainsBlockSize = HAL_DMA_GetBlockIteration(DMA_CHANNEL_9);
-
-  if (remainsBlockSize == HAL_DMA_GetTotalSize(DMA_CHANNEL_9) || IS_EMPTY(remainsBlockSize))
-    {
-      DMA_ChannelsConfig[channel_9_Index].onFinishCallback();
-    }
-  else
-    {
-      DMA_ChannelsConfig[channel_9_Index].onHalfCallback();
-    }
+	DMA_InterruptHandler(9);
 }
 
 
@@ -386,22 +261,7 @@ void DMA9_IRQHandler(void)
  */
 void DMA10_IRQHandler(void)
 {
-  uint8_t channel_10_Index;
-  uint16_t remainsBlockSize;
-
-  HAL_DMA_ClearInterruptFlag(DMA_CHANNEL_10);
-
-  channel_10_Index = DMA_GetChannelConfigIndex(DMA_CHANNEL_10);
-  remainsBlockSize = HAL_DMA_GetBlockIteration(DMA_CHANNEL_10);
-
-  if (remainsBlockSize == HAL_DMA_GetTotalSize(DMA_CHANNEL_10) || IS_EMPTY(remainsBlockSize))
-    {
-      DMA_ChannelsConfig[channel_10_Index].onFinishCallback();
-    }
-  else
-    {
-      DMA_ChannelsConfig[channel_10_Index].onHalfCallback();
-    }
+	DMA_InterruptHandler(10);
 }
 
 
@@ -417,22 +277,7 @@ void DMA10_IRQHandler(void)
  */
 void DMA11_IRQHandler(void)
 {
-  uint8_t channel_11_Index;
-  uint16_t remainsBlockSize;
-
-  HAL_DMA_ClearInterruptFlag(DMA_CHANNEL_11);
-
-  channel_11_Index = DMA_GetChannelConfigIndex(DMA_CHANNEL_11);
-  remainsBlockSize = HAL_DMA_GetBlockIteration(DMA_CHANNEL_11);
-
-  if (remainsBlockSize == HAL_DMA_GetTotalSize(DMA_CHANNEL_11) || IS_EMPTY(remainsBlockSize))
-    {
-      DMA_ChannelsConfig[channel_11_Index].onFinishCallback();
-    }
-  else
-    {
-      DMA_ChannelsConfig[channel_11_Index].onHalfCallback();
-    }
+	DMA_InterruptHandler(11);
 }
 
 
@@ -448,22 +293,7 @@ void DMA11_IRQHandler(void)
  */
 void DMA12_IRQHandler(void)
 {
-  uint8_t channel_12_Index;
-  uint16_t remainsBlockSize;
-
-  HAL_DMA_ClearInterruptFlag(DMA_CHANNEL_12);
-
-  channel_12_Index = DMA_GetChannelConfigIndex(DMA_CHANNEL_12);
-  remainsBlockSize = HAL_DMA_GetBlockIteration(DMA_CHANNEL_12);
-
-  if (remainsBlockSize == HAL_DMA_GetTotalSize(DMA_CHANNEL_12) || IS_EMPTY(remainsBlockSize))
-    {
-      DMA_ChannelsConfig[channel_12_Index].onFinishCallback();
-    }
-  else
-    {
-      DMA_ChannelsConfig[channel_12_Index].onHalfCallback();
-    }
+	DMA_InterruptHandler(12);
 }
 
 
@@ -479,22 +309,7 @@ void DMA12_IRQHandler(void)
  */
 void DMA13_IRQHandler(void)
 {
-  uint8_t channel_13_Index;
-  uint16_t remainsBlockSize;
-
-  HAL_DMA_ClearInterruptFlag(DMA_CHANNEL_13);
-
-  channel_13_Index = DMA_GetChannelConfigIndex(DMA_CHANNEL_13);
-  remainsBlockSize = HAL_DMA_GetBlockIteration(DMA_CHANNEL_13);
-
-  if (remainsBlockSize == HAL_DMA_GetTotalSize(DMA_CHANNEL_13) || IS_EMPTY(remainsBlockSize))
-    {
-      DMA_ChannelsConfig[channel_13_Index].onFinishCallback();
-    }
-  else
-    {
-      DMA_ChannelsConfig[channel_13_Index].onHalfCallback();
-    }
+	DMA_InterruptHandler(13);
 }
 
 
@@ -510,22 +325,7 @@ void DMA13_IRQHandler(void)
  */
 void DMA14_IRQHandler(void)
 {
-  uint8_t channel_14_Index;
-  uint16_t remainsBlockSize;
-
-  HAL_DMA_ClearInterruptFlag(DMA_CHANNEL_14);
-
-  channel_14_Index = DMA_GetChannelConfigIndex(DMA_CHANNEL_14);
-  remainsBlockSize = HAL_DMA_GetBlockIteration(DMA_CHANNEL_14);
-
-  if (remainsBlockSize == HAL_DMA_GetTotalSize(DMA_CHANNEL_14) || IS_EMPTY(remainsBlockSize))
-    {
-      DMA_ChannelsConfig[channel_14_Index].onFinishCallback();
-    }
-  else
-    {
-      DMA_ChannelsConfig[channel_14_Index].onHalfCallback();
-    }
+	DMA_InterruptHandler(14);
 }
 
 
@@ -541,22 +341,7 @@ void DMA14_IRQHandler(void)
  */
 void DMA15_IRQHandler(void)
 {
-  uint8_t channel_15_Index;
-  uint16_t remainsBlockSize;
-
-  HAL_DMA_ClearInterruptFlag(DMA_CHANNEL_15);
-
-  channel_15_Index = DMA_GetChannelConfigIndex(DMA_CHANNEL_15);
-  remainsBlockSize = HAL_DMA_GetBlockIteration(DMA_CHANNEL_15);
-
-  if (remainsBlockSize == HAL_DMA_GetTotalSize(DMA_CHANNEL_15) || IS_EMPTY(remainsBlockSize))
-    {
-      DMA_ChannelsConfig[channel_15_Index].onFinishCallback();
-    }
-  else
-    {
-      DMA_ChannelsConfig[channel_15_Index].onHalfCallback();
-    }
+	DMA_InterruptHandler(15);
 }
 
 
@@ -575,5 +360,5 @@ void DMA_Error_IRQHandler(void)
 
 }
 
-
+#endif /* USE_DMA */
 /************************************** END OF FILE **********************************************/

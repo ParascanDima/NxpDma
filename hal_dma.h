@@ -1,24 +1,11 @@
-/************************** (C) 2018 BSS-ONE ******************************************************
- *  @verbatim
- *   Copyright (C) 2018 BSS-ONE
- *   All Rights Reserved.
- *
- *   The reproduction, transmission or use of this document or its contents is not permitted
- *   without express written authority.
- *   Offenders will be liable for damages. All rights, including rights created
- *   by patent grant or registration of a utility model or design, are reserved.
- * @endverbatim
- **************************************************************************************************
- */
-
 /********************************************* Login **********************************************
- *!< File Name 					: hal_dma.h
+ *!< File Name 					    : hal_dma.h
  *!< Author   	        		: Dumitru Parascan
- *!< Version	        		: V1.0
+ *!< Version	        		  : V1.0
  *!< Date     		        	: Aug 30, 2018
- *!< @brief		        		:
- *!<                            : (see note at the end of the file)
- *!< Modifiable YES/NO		    :
+ *!< @brief		        		  :
+ *!<                        : (see note at the end of the file)
+ *!< Modifiable YES/NO		  :
  *!< Critical explanation		: 
  **************************************************************************************************
  */
@@ -51,6 +38,7 @@
 
 #include "hal_dmaif.h"
 
+#ifdef USE_DMA
 /*!< Definitions section ----------------------------------------------------------------------- */
 
 #define DMA_CHANNEL_0           0U
@@ -174,7 +162,7 @@ uint8_t HAL_DMA_ReportErrors(void);
  *!< Return                  : uint16_t
  *!< Critical section YES/NO : no
  */
-uint16_t HAL_DMA_GetTotalSize(uint8_t channelNumber);
+uint16_t HAL_DMA_GetTotalSize(uint32_t transferCtrlPtr);
 
 
 /****************************************************************************************
@@ -202,17 +190,29 @@ DMA_Arbitration_Algorithm_t HAL_DMA_GetArbitrationAlgorith(void);
 void HAL_DMA_ClearErrorFlag(uint8_t channelNumber);
 
 
+/****************************************************************************************
+ *!< Function    	     : HAL_DMA_IsChannelActive
+ *!< @brief		     : Shows either channel active or not.
+ *!< Parameters              :
+ *!<                   Input : uint8_t channelNumber
+ *!<                   Output:
+ *!< Return                  : uint32_t
+ *!< Critical section YES/NO : NO
+ */
+uint32_t HAL_DMA_GetTransferControl(uint8_t channelNumber);
+
+
 
 /****************************************************************************************
  *!< Function    	     	 : HAL_DMA_UseOffsetPerRequest
  *!< @brief		    		 : Clear error flag on channel.
  *!< Parameters              :
- *!<                   Input : uint8_t channelNumber
+ *!<                   Input : uint32_t transferCtrlPtr
  *!<                   Output:
  *!< Return                  : void
  *!< Critical section YES/NO : NO
  */
-void HAL_DMA_UseOffsetPerRequest(uint8_t channelNumber, int32_t transferOffset);
+void HAL_DMA_UseOffsetPerRequest(uint32_t transferCtrlPtr, int32_t transferOffset);
 
 
 /****************************************************************************************
@@ -224,7 +224,7 @@ void HAL_DMA_UseOffsetPerRequest(uint8_t channelNumber, int32_t transferOffset);
  *!< Return                  : void
  *!< Critical section YES/NO : NO
  */
-void HAL_DMA_SetSrcTransferOffset(uint8_t channelNumber, int16_t transferOffset);
+void HAL_DMA_SetSrcTransferOffset(uint32_t transferCtrlPtr, int16_t transferOffset);
 
 
 
@@ -237,7 +237,7 @@ void HAL_DMA_SetSrcTransferOffset(uint8_t channelNumber, int16_t transferOffset)
  *!< Return                  : void
  *!< Critical section YES/NO : NO
  */
-void HAL_DMA_SetDstTransferOffset(uint8_t channelNumber, int16_t transferOffset);
+void HAL_DMA_SetDstTransferOffset(uint32_t transferCtrlPtr, int16_t transferOffset);
 
 
 
@@ -370,7 +370,7 @@ void HAL_DMA_DisableAllRequests(void);
  *!< Return                  : void
  *!< Critical section YES/NO : NO
  */
-void HAL_DMA_DisableRequestAfterFinish(uint8_t channelNumber);
+void HAL_DMA_DisableRequestAfterFinish(uint32_t transferCtrlPtr);
 
 
 
@@ -462,7 +462,7 @@ uint8_t HAL_DMA_IsChannelActive(uint8_t channelNumber);
  *!< Return                  : void
  *!< Critical section YES/NO : NO
  */
-void HAL_DMA_SetSrcAddrAdjustment(uint8_t channelNumber, int32_t adj);
+void HAL_DMA_SetSrcAddrAdjustment(uint32_t transferCtrlPtr, int32_t adj);
 
 
 
@@ -475,7 +475,7 @@ void HAL_DMA_SetSrcAddrAdjustment(uint8_t channelNumber, int32_t adj);
  *!< Return                  : void
  *!< Critical section YES/NO : NO
  */
-void HAL_DMA_SetDstAddrAdjustment(uint8_t channelNumber, int32_t adj);
+void HAL_DMA_SetDstAddrAdjustment(uint32_t transferCtrlPtr, int32_t adj);
 
 
 
@@ -539,7 +539,7 @@ uint32_t HAL_DMA_GetSrcAddr(uint8_t channelNumber);
  *!< Return                  : void
  *!< Critical section YES/NO : NO
  */
-void HAL_DMA_SetSrcAddr(uint8_t channelNumber, uint32_t srcAddr);
+void HAL_DMA_SetSrcAddr(uint32_t transferCtrlPtr, uint32_t srcAddr);
 
 
 /****************************************************************************************
@@ -551,7 +551,7 @@ void HAL_DMA_SetSrcAddr(uint8_t channelNumber, uint32_t srcAddr);
  *!< Return                  : void
  *!< Critical section YES/NO : NO
  */
-void HAL_DMA_SetDstAddr(uint8_t channelNumber, uint32_t dstAddr);
+void HAL_DMA_SetDstAddr(uint32_t transferCtrlPtr, uint32_t dstAddr);
 
 
 /****************************************************************************************
@@ -563,7 +563,7 @@ void HAL_DMA_SetDstAddr(uint8_t channelNumber, uint32_t dstAddr);
  *!< Return                  : uint32_t
  *!< Critical section YES/NO : NO
  */
-uint32_t HAL_DMA_GetDstAddr(uint8_t channelNumber);
+uint32_t HAL_DMA_GetDstAddr(uint32_t transferCtrlPtr);
 
 
 
@@ -576,7 +576,7 @@ uint32_t HAL_DMA_GetDstAddr(uint8_t channelNumber);
  *!< Return                  : void
  *!< Critical section YES/NO : NO
  */
-void HAL_DMA_SetSrcAddrMask(uint8_t channelNumber, uint8_t mask);
+void HAL_DMA_SetSrcAddrMask(uint32_t transferCtrlPtr, uint8_t mask);
 
 
 
@@ -589,7 +589,7 @@ void HAL_DMA_SetSrcAddrMask(uint8_t channelNumber, uint8_t mask);
  *!< Return                  : void
  *!< Critical section YES/NO : NO
  */
-void HAL_DMA_SetDstAddrMask(uint8_t channelNumber, uint8_t mask);
+void HAL_DMA_SetDstAddrMask(uint32_t transferCtrlPtr, uint8_t mask);
 
 
 
@@ -602,7 +602,7 @@ void HAL_DMA_SetDstAddrMask(uint8_t channelNumber, uint8_t mask);
  *!< Return                  : void
  *!< Critical section YES/NO : NO
  */
-void HAL_DMA_SetSrcTransferSize(uint8_t channelNumber, DMA_TransferSize_t size);
+void HAL_DMA_SetSrcTransferSize(uint32_t transferCtrlPtr, DMA_TransferSize_t size);
 
 
 
@@ -615,7 +615,7 @@ void HAL_DMA_SetSrcTransferSize(uint8_t channelNumber, DMA_TransferSize_t size);
  *!< Return                  : void
  *!< Critical section YES/NO : NO
  */
-void HAL_DMA_SetDstTransferSize(uint8_t channelNumber, DMA_TransferSize_t size);
+void HAL_DMA_SetDstTransferSize(uint32_t transferCtrlPtr, DMA_TransferSize_t size);
 
 
 
@@ -628,7 +628,7 @@ void HAL_DMA_SetDstTransferSize(uint8_t channelNumber, DMA_TransferSize_t size);
  *!< Return                  : void
  *!< Critical section YES/NO : NO
  */
-void HAL_DMA_SetSrcRequestOffset(uint8_t channelNumber, DMA_Decision_t decision);
+void HAL_DMA_SetSrcRequestOffset(uint32_t transferCtrlPtr, DMA_Decision_t decision);
 
 
 
@@ -641,7 +641,7 @@ void HAL_DMA_SetSrcRequestOffset(uint8_t channelNumber, DMA_Decision_t decision)
  *!< Return                  : void
  *!< Critical section YES/NO : NO
  */
-void HAL_DMA_SetDstRequestOffset(uint8_t channelNumber, DMA_Decision_t decision);
+void HAL_DMA_SetDstRequestOffset(uint32_t transferCtrlPtr, DMA_Decision_t decision);
 
 
 
@@ -666,7 +666,7 @@ void HAL_DMA_EnableOffsetsPerRequest(DMA_Decision_t decision);
  *!< Return                  : void
  *!< Critical section YES/NO : NO
  */
-void HAL_DMA_SetRequestBlockSize(uint8_t channelNumber, uint32_t size);
+void HAL_DMA_SetRequestBlockSize(uint32_t transferCtrlPtr, uint32_t size);
 
 
 
@@ -679,7 +679,7 @@ void HAL_DMA_SetRequestBlockSize(uint8_t channelNumber, uint32_t size);
  *!< Return                  : void
  *!< Critical section YES/NO : NO
  */
-void HAL_DMA_ChannelsLinkOnRequestFinish(uint8_t channelNumber, DMA_Decision_t decision);
+void HAL_DMA_ChannelsLinkOnRequestFinish(uint32_t transferCtrlPtr, DMA_Decision_t decision);
 
 
 
@@ -692,7 +692,7 @@ void HAL_DMA_ChannelsLinkOnRequestFinish(uint8_t channelNumber, DMA_Decision_t d
  *!< Return                  : void
  *!< Critical section YES/NO : NO
  */
-void HAL_DMA_SetLinkedChannelOnRequestFinish(uint8_t channelNumber, uint8_t linkedChannelNumber);
+void HAL_DMA_SetLinkedChannelOnRequestFinish(uint32_t transferCtrlPtr, uint8_t linkedChannelNumber);
 
 
 
@@ -705,7 +705,7 @@ void HAL_DMA_SetLinkedChannelOnRequestFinish(uint8_t channelNumber, uint8_t link
  *!< Return                  : void
  *!< Critical section YES/NO : NO
  */
-void HAL_DMA_SetRequestCountToFinish(uint8_t channelNumber, uint16_t minorLoops);
+void HAL_DMA_SetRequestCountToFinish(uint32_t transferCtrlPtr, uint16_t minorLoops);
 
 
 
@@ -718,7 +718,7 @@ void HAL_DMA_SetRequestCountToFinish(uint8_t channelNumber, uint16_t minorLoops)
  *!< Return                  : uint16_t
  *!< Critical section YES/NO : NO
  */
-uint16_t HAL_DMA_GetBlockIteration(uint8_t channelNumber);
+uint16_t HAL_DMA_GetBlockIteration(uint32_t transferCtrlPtr);
 
 
 
@@ -731,7 +731,7 @@ uint16_t HAL_DMA_GetBlockIteration(uint8_t channelNumber);
  *!< Return                  : void
  *!< Critical section YES/NO : NO
  */
-void HAL_DMA_SetBandwidthControl(uint8_t channelNumber, DMA_BWC_t bandwidth);
+void HAL_DMA_SetBandwidthControl(uint32_t transferCtrlPtr, DMA_BWC_t bandwidth);
 
 
 
@@ -744,7 +744,7 @@ void HAL_DMA_SetBandwidthControl(uint8_t channelNumber, DMA_BWC_t bandwidth);
  *!< Return                  : void
  *!< Critical section YES/NO : NO
  */
-void HAL_DMA_ChannelsLinkOnMajorLoop(uint8_t channelNumber, DMA_Decision_t decision);
+void HAL_DMA_ChannelsLinkOnMajorLoop(uint32_t transferCtrlPtr, DMA_Decision_t decision);
 
 
 
@@ -757,7 +757,7 @@ void HAL_DMA_ChannelsLinkOnMajorLoop(uint8_t channelNumber, DMA_Decision_t decis
  *!< Return                  : void
  *!< Critical section YES/NO : NO
  */
-void HAL_DMA_SetLinkedChannelOnMajorLoop(uint8_t channelNumber, uint8_t linkedChannelNumber);
+void HAL_DMA_SetLinkedChannelOnMajorLoop(uint32_t transferCtrlPtr, uint8_t linkedChannelNumber);
 
 
 
@@ -770,7 +770,7 @@ void HAL_DMA_SetLinkedChannelOnMajorLoop(uint8_t channelNumber, uint8_t linkedCh
  *!< Return                  : void
  *!< Critical section YES/NO : NO
  */
-void HAL_DMA_HalfMajorLoopInterrupt(uint8_t channelNumber, DMA_Decision_t decision);
+void HAL_DMA_HalfMajorLoopInterrupt(uint32_t transferCtrlPtr, DMA_Decision_t decision);
 
 
 
@@ -783,7 +783,7 @@ void HAL_DMA_HalfMajorLoopInterrupt(uint8_t channelNumber, DMA_Decision_t decisi
  *!< Return                  : void
  *!< Critical section YES/NO : NO
  */
-void HAL_DMA_CompleteMajorLoopInterrupt(uint8_t channelNumber, DMA_Decision_t decision);
+void HAL_DMA_CompleteMajorLoopInterrupt(uint32_t transferCtrlPtr, DMA_Decision_t decision);
 
 
 
@@ -796,7 +796,7 @@ void HAL_DMA_CompleteMajorLoopInterrupt(uint8_t channelNumber, DMA_Decision_t de
  *!< Return                  : void
  *!< Critical section YES/NO : NO
  */
-void HAL_DMA_TriggerSwRequest(uint8_t channelNumber);
+void HAL_DMA_TriggerSwRequest(uint32_t transferCtrlPtr);
 
 
 
@@ -817,12 +817,49 @@ void HAL_DMA_InitChannelMUX(uint8_t channelNumber, DMA_RequestSource_t source, D
  *!< Function    	     	 : HAL_DMA_ClearTransferControlDescriptor
  *!< @brief		    		 : comment
  *!< Parameters              :
- *!<                   Input : uint8_t channelNumber
+ *!<                   Input : uint32_t transferCtrlPtr
  *!<                   Output:
  *!< Return                  : void
  *!< Critical section YES/NO : NO
  */
-void HAL_DMA_ClearTransferControlDescriptor(uint8_t channelNumber);
+void HAL_DMA_ClearTransferControlDescriptor(uint32_t transferCtrlPtr);
+
+
+/****************************************************************************************
+ *!< Function    	     : HAL_DMA_EnableScatterGather
+ *!< @brief		     : Function set the CSR[ESG] bit in TCD
+ *!< Parameters              :
+ *!<                   Input : uint32_t transferCtrlPtr -
+ *!<                   	     : BOOL enable -
+ *!<                   Output:
+ *!< Return                  : void
+ *!< Critical section YES/NO : NO
+ */
+void HAL_DMA_EnableScatterGather(uint32_t transferCtrlPtr, BOOL enable);
+
+
+/****************************************************************************************
+ *!< Function    	     : HAL_DMA_ClearDoneFlag
+ *!< @brief		     : Function set the CSR[ESG] bit in TCD
+ *!< Parameters              :
+ *!<                   Input : uint32_t transferCtrlPtr -
+ *!<                   Output:
+ *!< Return                  : void
+ *!< Critical section YES/NO : NO
+ */
+void HAL_DMA_ClearDoneFlag(uint32_t transferCtrlPtr);
+
+
+/****************************************************************************************
+ *!< Function    	     : HAL_DMA_GetChnNrByTcd
+ *!< @brief		     :
+ *!< Parameters              :
+ *!<                   Input : uint32_t transferCtrlPtr -
+ *!<                   Output:
+ *!< Return                  : void
+ *!< Critical section YES/NO : NO
+ */
+uint32_t HAL_DMA_GetChnNrByTcd(uint32_t transferCtrlPtr);
 
 
 
@@ -831,7 +868,7 @@ void HAL_DMA_ClearTransferControlDescriptor(uint8_t channelNumber);
 	}
 #endif /* __cplusplus */
 
-
+#endif /* USE_DMA */
 #endif /* HAL_DMA_H_ */
 
 

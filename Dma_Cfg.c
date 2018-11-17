@@ -1,24 +1,11 @@
-/************************** (C) 2018 BSS-ONE ******************************************************
- *  @verbatim
- *   Copyright (C) 2018 BSS-ONE
- *   All Rights Reserved.
- *
- *   The reproduction, transmission or use of this document or its contents is not permitted
- *   without express written authority.
- *   Offenders will be liable for damages. All rights, including rights created
- *   by patent grant or registration of a utility model or design, are reserved.
- * @endverbatim
- **************************************************************************************************
- */
-
 /********************************************* Login **********************************************
- *!< File Name 					: DMA_Cfg.c
+ *!< File Name 				     	: DMA_Cfg.c
  *!< Author   	        		: Dumitru Parascan
- *!< Version	        		: V1.0
+ *!< Version	        	  	: V1.0
  *!< Date     		        	: Sep 7, 2018
- *!< @brief		        		:
- *!<                           	: (see note at the end of the file)
- *!< Modifiable YES/NO		    :
+ *!< @brief		        	  	:
+ *!<                        : (see note at the end of the file)
+ *!< Modifiable YES/NO		  :
  *!< Critical explanation		: 
  **************************************************************************************************
  */
@@ -39,7 +26,7 @@
 /*!< Include section --------------------------------------------------------------------------- */
 
 #include "Dma_Cfg.h"
-
+#ifdef USE_DMA
 /*<! Definitions section ----------------------------------------------------------------------- */
 
 
@@ -48,13 +35,13 @@
 
 /*!< Exported variables section ---------------------------------------------------------------- */
 
-DMA_ConfigType DMA_ConfigData = {
-		.arbitrationAlgorithm = enDMA_ARBITRATION_FIXED_PRIORITY,
+DMA_ConfigType DMA_ConfigDevice = {
+		.arbitrationAlgorithm = enDMA_ARBITRATION_ROUND_ROBIN,
 		.bEnableDebug = FALSE,
 		.bEnableHaltOnError = FALSE
 };
 
-static int8_t DmaCfgMap[16] =
+static int8_t DmaCfgMap[DMA_TOTAL_CHANNELS] =
     {
 	-1, -1, -1, -1,
 	-1, -1, -1, -1,
@@ -62,9 +49,10 @@ static int8_t DmaCfgMap[16] =
 	-1, -1, -1, -1
     };
 
-DMA_Channel_ConfigType DMA_ChannelsConfig[DMA_USED_CHANNELS] = {
+DMA_Channel_ConfigType DMA_ChannelsConfig[DMA_TOTAL_CHANNELS];
 
-};
+static uint8_t dmaConfiguredChannels = 0;
+
 
 /*!< Static variable section ------------------------------------------------------------------- */
 
@@ -119,7 +107,7 @@ void DMA_ConfigMap(void)
 {
   uint8_t index;
 
-  for (index = 0; index < DMA_USED_CHANNELS; index++)
+  for (index = 0; index < dmaConfiguredChannels; index++)
     {
       DmaCfgMap[DMA_ChannelsConfig[index].channelNumber] = index;
     }
@@ -127,20 +115,69 @@ void DMA_ConfigMap(void)
 }
 
 
-
 /****************************************************************************************
- *!< Function    	     : DMA_GetChannelConfigIndex
- *!< @brief		     : Get the index of channel in configuration array
+ *!< Function    	     : DMA_GetNumberOfConfiguredChannels
+ *!< @brief		     : Get the number of configured DMA channels
  *!< Parameters              :
- *!<                   Input : uint8_t channel
+ *!<                   Input :
  *!<                   Output:
- *!< Return                  : uint8_t
+ *!< Return                  : Number of configured DMA channels
  *!< Critical section YES/NO : NO
  */
-uint8_t DMA_GetChannelConfigIndex(uint8_t channel)
+uint8_t DMA_GetNumberOfConfiguredChannels(void)
 {
-  return DmaCfgMap[channel];
+  return dmaConfiguredChannels;
 }
 
 
+/****************************************************************************************
+ *!< Function    	     : DMA_AddConfiguredChannel
+ *!< @brief		     : Indicates that one channel is configured
+ *!< Parameters              :
+ *!<                   Input : -
+ *!<                   Output: -
+ *!< Return                  : -
+ *!< Critical section YES/NO : NO
+ */
+void DMA_AddConfiguredChannel(DMA_Channel_ConfigType channelCfg)
+{
+  DmaCfgMap[channelCfg.channelNumber] = channelCfg.channelNumber;
+  DMA_ChannelsConfig[channelCfg.channelNumber] = channelCfg;
+  dmaConfiguredChannels++;
+
+}
+
+
+/****************************************************************************************
+ *!< Function    	     : DMA_AddConfiguredChannel
+ *!< @brief		     : Indicates that one channel is no more configured
+ *!< Parameters              :
+ *!<                   Input : -
+ *!<                   Output: -
+ *!< Return                  : -
+ *!< Critical section YES/NO : NO
+ */
+void DMA_RemoveConfiguredChannel(uint8_t channel)
+{
+  dmaConfiguredChannels--;
+  DmaCfgMap[channel] = -1;
+}
+
+
+/****************************************************************************************
+ *!< Function    	     : DMA_isChannelConfigured
+ *!< @brief		     : Check if "channel" is configured
+ *!< Parameters              :
+ *!<                   Input : uint8_t channel - should be verified if configured
+ *!<                   Output: -
+ *!< Return                  : -
+ *!< Critical section YES/NO : NO
+ */
+bool DMA_isChannelConfigured(uint8_t channel)
+{
+  return DmaCfgMap[channel] == -1 ? FALSE : TRUE;
+}
+
+
+#endif /* USE_DMA */
 /************************************** END OF FILE **********************************************/
